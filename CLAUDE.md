@@ -270,8 +270,10 @@ One branch per BUILD_PLAN prompt, named for the work: `feat/admin-products`,
 `feat/checkout-shipping`, `fix/cart-variant-pricing`. Never commit directly to `main`.
 Open the branch yourself at the start of a prompt.
 
-When a prompt is done, report the branch name and the commit list, then stop. The
-human merges. Do not merge, do not open pull requests, do not push to `main`.
+When a prompt is done, merge the branch into `main` yourself: fast forward if git can,
+a merge commit if it can't. Report the branch name, the commit list, and the merge,
+then stop. Do not open pull requests. Do not push `main`, or any branch, to the
+remote without asking first.
 
 ### Staging
 
@@ -290,7 +292,7 @@ own commit before continuing.
 - `git rebase`, `git reset --hard`, `git filter-branch`
 - amending a commit that has already been pushed
 - deleting a branch
-- anything touching `main` directly
+- pushing anything to the remote (`git push`)
 
 ### On history looking human
 
