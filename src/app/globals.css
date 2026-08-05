@@ -1,1 +1,104 @@
 @import "tailwindcss";
+
+/* Design tokens. Palette and scale come from CLAUDE.md section 3, do not improvise here. */
+@theme {
+  --color-paper: #e7eaee;
+  --color-surface: #ffffff;
+  --color-ink: #12151a;
+  --color-ink-soft: #5b6472;
+  --color-flame: #ff5c1a;
+  --color-cyan: #00b8d9;
+  --color-lime: #b8e62e;
+  --color-magenta: #ff3d8b;
+
+  /* next/font sets the --font-*-src variables on <html> in layout.tsx. */
+  --font-display: var(--font-bricolage-src), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-hanken-src), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono-src), ui-monospace, monospace;
+
+  /* 12 / 14 / 16 / 20 / 26 / 34 / 48 / 64. Body copy never below 16. */
+  --text-xs: 12px;
+  --text-xs--line-height: 1.4;
+  --text-sm: 14px;
+  --text-sm--line-height: 1.45;
+  --text-base: 16px;
+  --text-base--line-height: 1.6;
+  --text-lg: 20px;
+  --text-lg--line-height: 1.4;
+  --text-xl: 26px;
+  --text-xl--line-height: 1.25;
+  --text-2xl: 34px;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 48px;
+  --text-3xl--line-height: 1.1;
+  --text-4xl: 64px;
+  --text-4xl--line-height: 1.05;
+
+  --tracking-display: -0.03em;
+  --tracking-utility: 0.08em;
+
+  /* 14px on cards and buttons, 999px on chips and tags. No other radii. */
+  --radius-card: 14px;
+  --radius-pill: 999px;
+
+  /* Hard offsets, never blurs. */
+  --shadow-hard: 4px 4px 0 var(--color-ink);
+  --shadow-hard-sm: 2px 2px 0 var(--color-ink);
+
+  --ease-press: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  /*
+    Hex infill, because that is what the inside of a print looks like. Built once
+    here and never repeated inside cards. The ink colour is inlined as #12151a
+    because a data URI cannot read a CSS custom property.
+  */
+  body {
+    background-color: var(--color-paper);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='%2312151a' fill-opacity='0.05' fill-rule='evenodd' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: var(--tracking-display);
+    line-height: 1.1;
+  }
+
+  /* Radix locks scroll by setting overflow on body, this keeps the page from shifting. */
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
+/*
+  Motion lives in exactly three places: card hover lift, button press, and the
+  catalogue fade-up. All of it goes away here. transform is included, so nothing
+  in the system may rely on a transform for layout or positioning. The Dialog is
+  centred with inset + margin rather than a translate for this reason.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    animation-delay: 0ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
+}
