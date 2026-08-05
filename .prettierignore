@@ -7,5 +7,8 @@ package-lock.json
 supabase/.temp
 src/lib/database.types.ts
 
-# hand aligned tables and hex values, prettier lowercases and reflows them
+# Hand maintained briefs. Prettier reflows their aligned tables and lowercases
+# the hex values in the palette, so it stays out of all of them.
 CLAUDE.md
+SETUP.md
+BUILD_PLAN.md
