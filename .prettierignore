@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+build
+.vercel
+package-lock.json
+supabase/.temp
+src/lib/database.types.ts
+
+# hand aligned tables and hex values, prettier lowercases and reflows them
+CLAUDE.md
