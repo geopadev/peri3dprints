@@ -3,28 +3,34 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
 
-/**
- * Admin paths that must stay reachable without being the owner, otherwise the
- * login and the rejection page would redirect to themselves forever.
- */
-const OPEN_ADMIN_PATHS = ["/admin/login", "/admin/not-owner"];
+/** Paths that must stay reachable without being the owner, or the rejection
+ * page would redirect to itself forever. */
+const OPEN_ADMIN_PATHS = ["/admin/not-owner"];
 
 function isOpenAdminPath(pathname: string): boolean {
   return OPEN_ADMIN_PATHS.some((open) => pathname === open || pathname.startsWith(`${open}/`));
 }
 
+/** Paths any signed in buyer may reach, owner or not. */
+const SESSION_ONLY_PATHS = ["/account", "/orders", "/messages"];
+
+function isSessionOnlyPath(pathname: string): boolean {
+  return SESSION_ONLY_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 /**
  * Carries any refreshed auth cookies onto a redirect. Without this the session
- * that was just refreshed is dropped and the next request signs the user out.
+ * that was just refreshed is dropped and the next request signs the person out.
  */
-function redirectPreservingSession(
+function redirectTo(
   request: NextRequest,
   current: NextResponse,
   pathname: string,
+  next?: string,
 ): NextResponse {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
-  url.search = "";
+  url.search = next ? `?next=${encodeURIComponent(next)}` : "";
 
   const redirect = NextResponse.redirect(url);
   for (const cookie of current.cookies.getAll()) {
@@ -59,18 +65,20 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
+  const here = `${pathname}${search}`;
 
   if (pathname.startsWith("/admin") && !isOpenAdminPath(pathname)) {
-    // An anonymous buyer session is a signed in user, but it is not a login.
-    if (!user || user.is_anonymous) {
-      return redirectPreservingSession(request, response, "/admin/login");
+    if (!user) {
+      return redirectTo(request, response, "/sign-in", here);
     }
 
     const { data: isOwner, error } = await supabase.rpc("is_owner");
     if (error || !isOwner) {
-      return redirectPreservingSession(request, response, "/admin/not-owner");
+      return redirectTo(request, response, "/admin/not-owner");
     }
+  } else if (isSessionOnlyPath(pathname) && !user) {
+    return redirectTo(request, response, "/sign-in", here);
   }
 
   return response;

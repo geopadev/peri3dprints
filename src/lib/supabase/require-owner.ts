@@ -12,15 +12,14 @@ import { createClient } from "./server";
  * shop data calls this too, so a route that is ever excluded from the matcher
  * does not quietly become open.
  */
-export async function requireOwner(): Promise<User> {
+export async function requireOwner(next = "/admin"): Promise<User> {
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // An anonymous buyer session is a signed in user but is not a login.
-  if (!user || user.is_anonymous) redirect("/admin/login");
+  if (!user) redirect(`/sign-in?next=${encodeURIComponent(next)}`);
 
   const { data: isOwner, error } = await supabase.rpc("is_owner");
   if (error || !isOwner) redirect("/admin/not-owner");

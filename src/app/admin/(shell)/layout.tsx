@@ -1,10 +1,10 @@
 import { AdminNav } from "@/components/admin/admin-nav";
 import { requireOwner } from "@/lib/supabase/require-owner";
-import { signOut } from "../login/actions";
+import { signOut } from "@/app/(site)/sign-in/actions";
 
 /**
- * Route group, so /admin/login and /admin/not-owner stay outside the guard and
- * cannot redirect to themselves. The group name does not appear in the URL.
+ * Route group, so /admin/not-owner stays outside the guard and cannot redirect
+ * to itself. The group name does not appear in the URL.
  */
 export default async function AdminShellLayout({ children }: { children: React.ReactNode }) {
   const user = await requireOwner();

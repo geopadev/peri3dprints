@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Button, Card } from "@/components/ui";
-import { signOut } from "../login/actions";
+import { signOut } from "@/app/(site)/sign-in/actions";
 
 export const metadata: Metadata = {
   title: "Not the shop owner",
