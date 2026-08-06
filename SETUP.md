@@ -91,8 +91,8 @@ untested storage policy is usually an open bucket.
 
 ### Making yourself and the client owners
 
-Everyone signs in the same way, with email and password or with Google. The owner is not a separate
-login, he is a row with a role. After the first sign in on each project, promote the account:
+Everyone signs in the same way, with email and password. The owner is not a separate login, he is a
+row with a role. After the first sign in on each project, promote the account:
 
 ```sql
 update public.profiles set role = 'owner' where email = 'client@example.com';
@@ -103,35 +103,10 @@ Do this for the client's real email on prod, and your own on dev. Until you do, 
 
 ---
 
-## 2a. Google sign in
+## 2a. Auth URL configuration and email delivery
 
-Buyers and the owner can sign in with Google. Supabase brokers this, so the OAuth credentials go
-into the Supabase dashboard, **not** into `.env.local`. There is no Google env var in this project.
-
-**You need a separate set of credentials for each Supabase project**, because the callback URL
-contains the project ref and Google matches it exactly. Doing dev and prod with one client is the
-mistake that produces a `redirect_uri_mismatch` you will stare at for an hour.
-
-In Google Cloud Console (console.cloud.google.com):
-
-1. Create a project, or pick an existing one.
-2. **APIs and Services > OAuth consent screen.** External. Fill in the app name, a support email and
-   a developer contact. While it is in Testing mode only accounts you list under Test users can sign
-   in, which is fine for dev. Publish it before launch, or real buyers get "app is blocked".
-3. **APIs and Services > Credentials > Create credentials > OAuth client ID.** Application type is
-   **Web application**.
-4. Under **Authorised redirect URIs** add the Supabase callback, not a URL on our own domain:
-
-   ```
-   https://<project-ref>.supabase.co/auth/v1/callback
-   ```
-
-   For this build that is `https://bmepjrxejreysevrvkol.supabase.co/auth/v1/callback` on dev and
-   `https://xxgkdbcgllpvbdvouyyr.supabase.co/auth/v1/callback` on prod. Our own
-   `/auth/callback` route never appears here. Supabase receives Google's redirect and then sends the
-   browser on to us.
-5. Copy the client ID and client secret into the Supabase dashboard under
-   **Authentication > Providers > Google**, and enable the provider.
+No social sign in, so there is no OAuth provider to configure. Email confirmation and password
+reset links still route through Supabase Auth, though, and both depend on the two things below.
 
 ### URL configuration
 
@@ -146,9 +121,10 @@ In Google Cloud Console (console.cloud.google.com):
   https://yourdomain.com/**
   ```
 
-Get this wrong and OAuth and confirmation emails **fail silently**: the link works, Supabase
-refuses the redirect, and the person lands back on the sign in page with no error and no session.
-It is the most common way this whole flow breaks, and it looks like a code bug when it is not.
+Get this wrong and confirmation and password reset emails **fail silently**: the link works,
+Supabase refuses the redirect, and the person lands back on the sign in page with no error and no
+session. It is the most common way this whole flow breaks, and it looks like a code bug when it is
+not.
 
 ### Custom SMTP, before launch
 
@@ -285,8 +261,8 @@ Vercel, connected to the GitHub repo.
 4. Domain: point the registrar's nameservers or an A/CNAME record at Vercel per its instructions,
    then set `NEXT_PUBLIC_SITE_URL` to the real domain and redeploy.
 5. Update the Stripe production webhook URL and the Supabase Auth redirect URLs (Authentication >
-   URL Configuration) to the real domain, and add the production Google OAuth redirect URI in
-   Google Cloud Console. Sign in and confirmation emails break silently if you forget this one.
+   URL Configuration) to the real domain. Confirmation and password reset emails break silently
+   if you forget this one.
 
 Cost at this scale: Vercel Hobby is free but its terms exclude commercial use, so budget for Pro at
 $20/month once the shop takes money. Supabase free tier is fine until images pass 1 GB. Resend is
