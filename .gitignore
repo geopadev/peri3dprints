@@ -49,3 +49,8 @@ next-env.d.ts
 # editors
 .vscode/
 .idea/
+
+# local agent tooling. No secrets in it, but one entry points at the production
+# project, and that should be a deliberate local choice rather than the default
+# for anyone who clones this.
+/.mcp.json
