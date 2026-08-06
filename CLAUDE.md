@@ -27,7 +27,7 @@ Success looks like: the owner can list a new print in under two minutes without 
 | Styling | Tailwind CSS v4 with custom tokens in CSS | No component library themes |
 | Primitives | Radix UI primitives, styled by hand | Dialog, Popover, Select, Toast only |
 | Database | Supabase Postgres with RLS on every table | Migrations in `supabase/migrations` |
-| Auth | Supabase Auth: magic link for owner, anonymous sign in for buyers | Buyers never see a signup form |
+| Auth | Supabase Auth: email and password with confirmation, plus Google OAuth | One system for everyone, owner is a role |
 | Files | Supabase Storage | `product-images` public, `chat-uploads` private |
 | Realtime | Supabase Realtime | Chat only |
 | Payments | Stripe Checkout, plus cash on delivery and bank transfer | Adapter pattern, see section 7 |
@@ -160,6 +160,21 @@ thing about a market stall is the table covered in things. Lead with that.
 - Never disable RLS to fix a bug. Fix the policy.
 - Never trust a price sent from the browser. Recompute every total server side from the database
   before creating a payment or an order.
+- One auth system, not two. Buyers and the owner sign in the same way: email and password with
+  confirmation, or Google. The owner is not a separate flow, he is `profiles.role = 'owner'`.
+  There is no anonymous sign in and no magic link route.
+- Browsing, product pages and the cart stay open to signed out visitors. The sign in wall appears
+  at exactly two points: tapping "Ask to buy", and opening chat. Nowhere else.
+- Both of those points preserve intent. Send the visitor to `/sign-in?next=<encoded path>` and land
+  them back where they were with the action completed, never on the home page with an empty cart.
+- The cart lives client side while signed out and merges into the account on first sign in.
+  Never silently drop it.
+- Passwords: minimum 8 characters, validated with the same zod schema on client and server. Do not
+  invent an uppercase or symbol rule, length is the thing that matters.
+- Sign in failures never reveal whether an email exists. "Email or password is not correct" covers
+  both cases, and the wrong-email and wrong-password paths must take the same route out.
+- No order and no conversation can exist without a signed in buyer. If a code path allows one,
+  that is a bug.
 - File naming: kebab-case files, PascalCase components, `use-*` for hooks.
 - No `any`. No `@ts-ignore`. If types fight you, say so rather than casting.
 
