@@ -1,20 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/safe-next";
 
 /**
- * Magic link lands here. Exchanges the code for a session, then decides where the
- * person actually belongs based on profiles.role.
+ * Every email link lands here: signup confirmation and password recovery
+ * alike, since both use the same PKCE code exchange. Owner status has nothing
+ * to do with this step any more, since the owner signs in exactly like every
+ * other buyer; /admin decides who belongs there on its own.
  *
- * This is a Route Handler rather than a Server Action because the auth provider
- * redirects the browser here with a query string, which an Action cannot receive.
+ * A Route Handler rather than a Server Action because the redirect carries a
+ * query string, which an Action cannot receive directly.
  */
-
-/** Blocks the `next` parameter from being used as an open redirect. */
-function safeNext(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/admin";
-  return value;
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -22,23 +18,14 @@ export async function GET(request: NextRequest) {
 
   // Supabase reports a rejected or expired link this way.
   const authError = searchParams.get("error_description") ?? searchParams.get("error");
-  if (authError) {
-    return NextResponse.redirect(`${origin}/admin/login?error=link`);
-  }
-
-  if (!code) {
-    return NextResponse.redirect(`${origin}/admin/login?error=link`);
+  if (authError || !code) {
+    return NextResponse.redirect(`${origin}/sign-in?error=link`);
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(`${origin}/admin/login?error=link`);
-  }
-
-  const { data: isOwner, error: ownerError } = await supabase.rpc("is_owner");
-  if (ownerError || !isOwner) {
-    return NextResponse.redirect(`${origin}/admin/not-owner`);
+    return NextResponse.redirect(`${origin}/sign-in?error=link`);
   }
 
   return NextResponse.redirect(`${origin}${next}`);
