@@ -6,23 +6,23 @@ Current branch: feat/admin-products
 
 ## Ledger
 
-| Stage | Name | Status | Branch | Notes |
-| --- | --- | --- | --- | --- |
-| 1 | Scaffold | done | chore/scaffold (built as feat/scaffold) | Verified 2026-08-06: typecheck, lint, build all exit 0. `.env.local` ignored. |
-| 2 | Design system | done | feat/design-system | Verified 2026-08-06: `/styleguide` returns 200, 15 components. Contrast failures recorded under Decisions. |
-| 3 | Database schema | done | feat/db-schema | Verified 2026-08-06: both migrations on disk. |
-| 4 | Supabase wiring and owner auth | done | feat/auth | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present. |
-| 5 | Admin product management | in progress | feat/admin-products | |
-| 6 | Public catalogue and product page | not started | | |
-| 7 | Cart | not started | | |
-| 8 | Shipping layer | not started | | |
-| 9 | Checkout and payment | not started | | |
-| 10 | Orders, email, fulfilment | not started | | |
-| 11 | Chat | not started | | |
-| 12 | Custom requests | not started | | |
-| 13 | Polish | not started | | |
-| 14 | Deploy preparation | not started | | |
-| 15 | BOX NOW go-live | blocked | | waiting on partner credentials |
+| Stage | Name                              | Status      | Branch                                  | Notes                                                                                                                            |
+| ----- | --------------------------------- | ----------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Scaffold                          | done        | chore/scaffold (built as feat/scaffold) | Verified 2026-08-06: typecheck, lint, build all exit 0. `.env.local` ignored.                                                    |
+| 2     | Design system                     | done        | feat/design-system                      | Verified 2026-08-06: `/styleguide` returns 200, 15 components. Contrast failures recorded under Decisions.                       |
+| 3     | Database schema                   | done        | feat/db-schema                          | Verified 2026-08-06: both migrations on disk.                                                                                    |
+| 4     | Supabase wiring and owner auth    | done        | feat/auth                               | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present. |
+| 5     | Admin product management          | blocked     | feat/admin-products                     | Code complete and merged. NOT marked done: the exit check needs a signed-in owner, and no owner account exists yet. See Blockers. |
+| 6     | Public catalogue and product page | not started |                                         |                                                                                                                                  |
+| 7     | Cart                              | not started |                                         |                                                                                                                                  |
+| 8     | Shipping layer                    | not started |                                         |                                                                                                                                  |
+| 9     | Checkout and payment              | not started |                                         |                                                                                                                                  |
+| 10    | Orders, email, fulfilment         | not started |                                         |                                                                                                                                  |
+| 11    | Chat                              | not started |                                         |                                                                                                                                  |
+| 12    | Custom requests                   | not started |                                         |                                                                                                                                  |
+| 13    | Polish                            | not started |                                         |                                                                                                                                  |
+| 14    | Deploy preparation                | not started |                                         |                                                                                                                                  |
+| 15    | BOX NOW go-live                   | blocked     |                                         | waiting on partner credentials                                                                                                   |
 
 Status is one of: not started, in progress, blocked, done.
 
@@ -40,6 +40,15 @@ Things that need a human. Date each one so a stale blocker is obvious.
   `http://localhost:3000/auth/callback` adding in the dashboard. No MCP tool
   exposes auth URL config.
 - 2026-08-06 Stage 9: Stripe test keys not in `.env.local` yet.
+- 2026-08-06 Stage 5: the exit check cannot be run. It asks for a product created
+  through the UI with three photos, a variant and full specs, round-tripped after
+  a reload and checked at 390px. Every admin route is behind `requireOwner()`, so
+  none of it can be reached until somebody does a real magic link login and that
+  profile is promoted to `role = 'owner'`. What was verified instead: the same
+  round trip driven straight against the database, using the exact select the
+  edit page runs. Three images came back in position order, the variant came
+  back, every spec field survived, and deleting the product cascaded its images
+  and variants away. The 390px pass is genuinely untested.
 
 ## Decisions
 
@@ -55,13 +64,25 @@ This is the record of why the code looks the way it does.
 - 2026-08-06 Login uses `useActionState` rather than react-hook-form: one email field did not justify the dependency. The zod schema is still shared with the Server Action.
 - 2026-08-06 `revoke execute` on `generate_order_number()` and `handle_new_user()`; they only ever run from triggers and were reachable via PostgREST RPC.
 - 2026-08-06 Storage buckets are created by migration rather than by hand in the dashboard as SETUP.md section 2 says, so dev and prod cannot drift.
+- 2026-08-06 `slugify` transliterates Greek, because the shop is in Cyprus and a Greek title otherwise slugified to an empty string and could not be saved.
+- 2026-08-06 Guarded admin pages live in an `(shell)` route group so `/admin/login` and `/admin/not-owner` stay outside the guard and cannot redirect to themselves.
+- 2026-08-06 `requireOwner()` runs in the admin layout as well as the middleware, because middleware is a convenience redirect rather than the security boundary.
+- 2026-08-06 Images and variants are replaced wholesale on save rather than reconciled row by row: the form always submits the full ordered list, so diffing would be more code and more ways to leave a gap in the positions.
+- 2026-08-06 Photos are resized to 1600px in the browser before upload, since a phone camera file is 4 to 8 MB and the bucket caps at 10 MB.
+- 2026-08-06 Category and settings forms are plain server-action forms with no client JS, so failures travel back as a query parameter rather than a return value.
+- 2026-08-06 Admin nav sits at the bottom on a phone and the top on desktop, because that is where a thumb is when he is holding the phone one handed.
 
 ## Next session
 
 The two or three concrete things to pick up. Written for someone with no memory
 of this session, because that is exactly who reads it.
 
-- Stage 5 is in progress on `feat/admin-products`. See the ledger note for where it got to.
-- Before anything can be clicked through as the owner, do a real magic link login
-  at `/admin/login`, then promote that profile row to `role = 'owner'`.
-- Stage 6 is the public storefront and is not blocked on anything.
+- Stage 5 code is written and merged to `main`. Before it can be signed off, add
+  `http://localhost:3000/auth/callback` to the Supabase Auth redirect list, do a
+  magic link login at `/admin/login`, then run
+  `update public.profiles set role = 'owner' where email = '<you>'`.
+- Then actually run the stage 5 exit check: add a print with three photos, a
+  variant and full specs, reload it, and do it on a 390px viewport. Photo upload
+  in particular has never been run against real Storage, only against the schema.
+- Stage 6 is the public storefront. It is not blocked on anything and can start
+  without the owner account existing.
