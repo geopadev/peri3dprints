@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, DM_Mono, Hanken_Grotesk } from "next/font/google";
-import { IdentityProvider } from "@/components/shop/identity-provider";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -46,9 +45,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${bricolage.variable} ${hanken.variable} ${dmMono.variable}`}>
-      <body>
-        <IdentityProvider>{children}</IdentityProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
