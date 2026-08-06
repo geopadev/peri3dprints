@@ -13,9 +13,7 @@ export const emailSchema = z
   .min(1, "Enter your email address.")
   .email("That does not look like an email address.");
 
-export const passwordSchema = z
-  .string()
-  .min(8, "Use at least 8 characters.");
+export const passwordSchema = z.string().min(8, "Use at least 8 characters.");
 
 export const displayNameSchema = z
   .string()
