@@ -27,7 +27,7 @@ Success looks like: the owner can list a new print in under two minutes without 
 | Styling | Tailwind CSS v4 with custom tokens in CSS | No component library themes |
 | Primitives | Radix UI primitives, styled by hand | Dialog, Popover, Select, Toast only |
 | Database | Supabase Postgres with RLS on every table | Migrations in `supabase/migrations` |
-| Auth | Supabase Auth: email and password with confirmation, plus Google OAuth | One system for everyone, owner is a role |
+| Auth | Supabase Auth: email and password with confirmation | One system for everyone, owner is a role |
 | Files | Supabase Storage | `product-images` public, `chat-uploads` private |
 | Realtime | Supabase Realtime | Chat only |
 | Payments | Stripe Checkout, plus cash on delivery and bank transfer | Adapter pattern, see section 7 |
@@ -161,8 +161,8 @@ thing about a market stall is the table covered in things. Lead with that.
 - Never trust a price sent from the browser. Recompute every total server side from the database
   before creating a payment or an order.
 - One auth system, not two. Buyers and the owner sign in the same way: email and password with
-  confirmation, or Google. The owner is not a separate flow, he is `profiles.role = 'owner'`.
-  There is no anonymous sign in and no magic link route.
+  confirmation. The owner is not a separate flow, he is `profiles.role = 'owner'`. There is no
+  anonymous sign in and no magic link route.
 - Browsing, product pages and the cart stay open to signed out visitors. The sign in wall appears
   at exactly two points: tapping "Ask to buy", and opening chat. Nowhere else.
 - Both of those points preserve intent. Send the visitor to `/sign-in?next=<encoded path>` and land
