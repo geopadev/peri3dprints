@@ -256,8 +256,9 @@ replaces both. The text above is kept as a record of what was built, not as curr
 ## Prompt 4b: real buyer accounts
 
 ```
-Replace anonymous sign in and the owner magic link with one auth system. Buyers get real accounts.
-The owner signs in exactly the same way and is distinguished only by profiles.role = 'owner'.
+Replace anonymous sign in and the owner magic link with one auth system: email and password through
+Supabase Auth. Buyers get real accounts. The owner signs in exactly the same way and is
+distinguished only by profiles.role = 'owner'. No social sign in.
 
 Remove first:
   - The anonymous identity provider and every call to signInAnonymously().
@@ -265,11 +266,11 @@ Remove first:
   - Any code path that lets an order or a conversation be created without a signed in buyer.
 
 Routes:
-  /sign-in           email and password, plus a Google button
-  /sign-up           email, password, display name, plus a Google button
+  /sign-in           email and password
+  /sign-up           email, password, display name
   /forgot-password   sends a reset email
   /reset-password    consumes the recovery token
-  /auth/callback     handles both the OAuth redirect and the email confirmation redirect
+  /auth/callback     handles the email confirmation redirect
   /auth/confirm      "check your inbox", with a resend action rate limited client side so it
                      cannot be spammed
   /account           display name, email, and a change password form
@@ -292,8 +293,7 @@ Schema and RLS:
   - buyer_id keeps referencing auth.users, so existing policies should need no change. Verify that
     against the actual policies rather than assuming it, and report any policy that relied on an
     anonymous session.
-  - The profiles insert trigger populates display_name from the Google profile when it is there,
-    and from the sign up form otherwise.
+  - The profiles insert trigger populates display_name from the sign up form.
 
 Middleware:
   - /admin/* requires a session AND profiles.role = 'owner'. A signed in non owner gets the plain
@@ -303,9 +303,6 @@ Middleware:
 Design: the auth pages follow CLAUDE.md section 3 like every other page. No centred card floating
 on a gradient, no social proof, and no "welcome back" for someone who has never been here. Plain,
 wide, and the same visual language as the shop.
-
-Google OAuth credentials come from SETUP.md section 2a. The client ID and secret go into the
-Supabase dashboard, not into .env.local.
 
 Stop and report.
 ```

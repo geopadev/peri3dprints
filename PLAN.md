@@ -107,26 +107,27 @@ generated and non-empty, `/admin` redirects an anonymous visitor to
 ### Stage 4b (`feat/buyer-accounts`) Real buyer accounts
 
 Replaces anonymous sign in and the separate owner magic link with one auth
-system: email and password with confirmation, plus Google OAuth. The owner signs
-in the same way as everyone else and is distinguished only by
+system: email and password with confirmation, through Supabase Auth. The owner
+signs in the same way as everyone else and is distinguished only by
 `profiles.role = 'owner'`. Delete `/admin/login`.
 
 Full detail in `BUILD_PLAN.md` prompt 4b.
 
 **Exit:** a new account can be created with email and password, confirms by
-email, and signs in. Google sign in works end to end on the dev project. Signed
-out visitors can still browse, open a product and fill a cart. Tapping "Ask to
-buy" while signed out lands on `/sign-in?next=...` and, after signing in,
-returns to the same page with the cart intact rather than emptied. `/admin` with
-a signed in non owner shows the plain "not the shop owner" page and does not
-loop. `/account`, `/orders` and `/messages` redirect to `/sign-in?next=...` when
-signed out. `/admin/login` returns 404. Report whether any existing RLS policy
-relied on an anonymous session.
+email, and signs in. Signed out visitors can still browse, open a product and
+fill a cart. Tapping "Ask to buy" while signed out lands on
+`/sign-in?next=...` and, after signing in, returns to the same page with the
+cart intact rather than emptied. `/admin` with a signed in non owner shows the
+plain "not the shop owner" page and does not loop. `/account`, `/orders` and
+`/messages` redirect to `/sign-in?next=...` when signed out. `/admin/login`
+returns 404. Report whether any existing RLS policy relied on an anonymous
+session.
 
-Blocked on Google OAuth credentials for the dev Supabase project, which are free
-and immediate. See `SETUP.md` section 2a. Custom SMTP is a launch blocker rather
-than a stage blocker: the built in sender is rate limited and will drop
-confirmation emails once there are real users.
+Not blocked on anything external: no Google credentials, no partner account.
+Custom SMTP is a launch blocker rather than a stage blocker: the built in
+sender is rate limited and will drop confirmation emails once there are real
+users, but stage 4b can be built and verified against Supabase's built in
+sender first.
 
 ### Stage 5 (`feat/admin-products`) Admin product management
 
