@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Button, Card, Input, Textarea } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { saveSettings, settingsErrorMessage } from "./actions";
+import { saveSettings } from "./actions";
+import { settingsErrorMessage } from "./messages";
 
 export const metadata: Metadata = {
   title: "Settings",

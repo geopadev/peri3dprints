@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
-import { categoryErrorMessage, deleteCategory, saveCategory } from "./actions";
+import { deleteCategory, saveCategory } from "./actions";
+import { categoryErrorMessage } from "./messages";
 
 export const metadata: Metadata = {
   title: "Categories",

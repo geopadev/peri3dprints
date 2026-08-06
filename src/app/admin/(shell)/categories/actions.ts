@@ -10,16 +10,9 @@ import { categorySchema, slugify } from "@/lib/validation/product";
  * These are plain `<form action={...}>` handlers, so they return void and the
  * page keeps working with no client JavaScript. Failures come back as a query
  * parameter rather than a return value, which a plain form action cannot carry.
+ * The wording for those codes lives in messages.ts, because a "use server"
+ * module may only export async functions.
  */
-const ERROR_MESSAGES: Record<string, string> = {
-  invalid: "Check the name and the web address.",
-  taken: "You already have a category at that web address.",
-  failed: "Could not save that. Try again in a moment.",
-};
-
-export function categoryErrorMessage(code: string | undefined): string | null {
-  return code ? (ERROR_MESSAGES[code] ?? ERROR_MESSAGES.failed ?? null) : null;
-}
 
 export async function saveCategory(formData: FormData): Promise<void> {
   await requireOwner();

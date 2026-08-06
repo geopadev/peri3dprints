@@ -6,14 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/supabase/require-owner";
 import { settingsSchema } from "@/lib/validation/product";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  invalid: "Check what you typed and try again.",
-  failed: "Could not save that. Try again in a moment.",
-};
-
-export function settingsErrorMessage(code: string | undefined): string | null {
-  return code ? (ERROR_MESSAGES[code] ?? ERROR_MESSAGES.failed ?? null) : null;
-}
+/** Failure wording lives in messages.ts: this module may only export async functions. */
 
 export async function saveSettings(formData: FormData): Promise<void> {
   await requireOwner();
