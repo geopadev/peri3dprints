@@ -86,18 +86,79 @@ Create these by hand in the dashboard, in both projects:
 | `custom-request-refs` | no | 5 MB | `image/*` |
 
 Policies for the two private buckets get written in prompts 11 and 12. Test them by trying to read
-another person's file from an anonymous session and confirming you are refused. An untested storage
-policy is usually an open bucket.
+another person's file while signed in as a different buyer and confirming you are refused. An
+untested storage policy is usually an open bucket.
 
 ### Making yourself and the client owners
 
-After the first magic-link login on each project, promote the account:
+Everyone signs in the same way, with email and password or with Google. The owner is not a separate
+login, he is a row with a role. After the first sign in on each project, promote the account:
 
 ```sql
 update public.profiles set role = 'owner' where email = 'client@example.com';
 ```
 
-Do this for the client's real email on prod, and your own on dev.
+Do this for the client's real email on prod, and your own on dev. Until you do, `/admin` shows the
+"this account is not the shop owner" page, which is the correct behaviour, not a bug.
+
+---
+
+## 2a. Google sign in
+
+Buyers and the owner can sign in with Google. Supabase brokers this, so the OAuth credentials go
+into the Supabase dashboard, **not** into `.env.local`. There is no Google env var in this project.
+
+**You need a separate set of credentials for each Supabase project**, because the callback URL
+contains the project ref and Google matches it exactly. Doing dev and prod with one client is the
+mistake that produces a `redirect_uri_mismatch` you will stare at for an hour.
+
+In Google Cloud Console (console.cloud.google.com):
+
+1. Create a project, or pick an existing one.
+2. **APIs and Services > OAuth consent screen.** External. Fill in the app name, a support email and
+   a developer contact. While it is in Testing mode only accounts you list under Test users can sign
+   in, which is fine for dev. Publish it before launch, or real buyers get "app is blocked".
+3. **APIs and Services > Credentials > Create credentials > OAuth client ID.** Application type is
+   **Web application**.
+4. Under **Authorised redirect URIs** add the Supabase callback, not a URL on our own domain:
+
+   ```
+   https://<project-ref>.supabase.co/auth/v1/callback
+   ```
+
+   For this build that is `https://bmepjrxejreysevrvkol.supabase.co/auth/v1/callback` on dev and
+   `https://xxgkdbcgllpvbdvouyyr.supabase.co/auth/v1/callback` on prod. Our own
+   `/auth/callback` route never appears here. Supabase receives Google's redirect and then sends the
+   browser on to us.
+5. Copy the client ID and client secret into the Supabase dashboard under
+   **Authentication > Providers > Google**, and enable the provider.
+
+### URL configuration
+
+**Authentication > URL Configuration** in the Supabase dashboard, per project.
+
+- **Site URL**: `http://localhost:3000` on dev, the real domain on prod.
+- **Redirect URLs**, add all of these:
+
+  ```
+  http://localhost:3000/**
+  https://<your-vercel-project>-*.vercel.app/**
+  https://yourdomain.com/**
+  ```
+
+Get this wrong and OAuth and confirmation emails **fail silently**: the link works, Supabase
+refuses the redirect, and the person lands back on the sign in page with no error and no session.
+It is the most common way this whole flow breaks, and it looks like a code bug when it is not.
+
+### Custom SMTP, before launch
+
+Supabase's built in email sender is rate limited to a handful of messages an hour and their docs say
+plainly it is not for production. Confirmation and password reset emails will start disappearing the
+moment you have real users, and the buyer sees nothing at all.
+
+Configure Resend as the SMTP provider under **Authentication > Emails > SMTP Settings**, using the
+same Resend account as the order emails in section 3. **Treat this as a launch blocker, not a nice
+to have.** A shop where the confirmation email silently never arrives is a shop that takes no orders.
 
 ---
 
@@ -224,7 +285,8 @@ Vercel, connected to the GitHub repo.
 4. Domain: point the registrar's nameservers or an A/CNAME record at Vercel per its instructions,
    then set `NEXT_PUBLIC_SITE_URL` to the real domain and redeploy.
 5. Update the Stripe production webhook URL and the Supabase Auth redirect URLs (Authentication >
-   URL Configuration) to the real domain. Magic links break silently if you forget this one.
+   URL Configuration) to the real domain, and add the production Google OAuth redirect URI in
+   Google Cloud Console. Sign in and confirmation emails break silently if you forget this one.
 
 Cost at this scale: Vercel Hobby is free but its terms exclude commercial use, so budget for Pro at
 $20/month once the shop takes money. Supabase free tier is fine until images pass 1 GB. Resend is
