@@ -12,7 +12,7 @@ Current branch: main
 | 2     | Design system                     | done        | feat/design-system                      | Verified 2026-08-06: `/styleguide` returns 200, 15 components. Contrast failures recorded under Decisions.                                       |
 | 3     | Database schema                   | done        | feat/db-schema                          | Verified 2026-08-06: both migrations on disk.                                                                                                    |
 | 4     | Supabase wiring and owner auth    | done        | feat/auth                               | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present.                 |
-| 4b    | Real buyer accounts               | not started | feat/buyer-accounts                     | Added 2026-08-06 by a plan change. Replaces anonymous sign in and the owner magic link with one auth system. Next stage to run.                  |
+| 4b    | Real buyer accounts               | not started | feat/buyer-accounts                     | Added 2026-08-06 by a plan change. Email and password only, no Google (dropped same day before any code existed). Next stage to run. |
 | 5     | Admin product management          | blocked     | feat/admin-products                     | Code complete and merged. NOT marked done: the exit check needs a signed-in owner, and no way to become one exists until 4b ships. See Blockers. |
 | 6     | Public catalogue and product page | not started |                                         |                                                                                                                                                  |
 | 7     | Cart                              | not started |                                         |                                                                                                                                                  |
@@ -37,14 +37,12 @@ Things that need a human. Date each one so a stale blocker is obvious.
   owner account is now stage 4b's sign up, then
   `update public.profiles set role = 'owner' where email = '<you>'`. Nothing to
   do here until 4b ships.
-- 2026-08-06 Stage 4b: Google OAuth credentials are needed for the dev Supabase
-  project before Google sign in can be verified. Free and immediate, see
-  SETUP.md section 2a. Dev and prod need separate credentials because the
-  callback URL carries the project ref.
 - 2026-08-06 Stage 4b: Supabase Auth URL configuration needs setting per
   project, covering localhost, the Vercel preview wildcard and production. No
   MCP tool exposes auth URL config, so this is a dashboard job. Getting it wrong
-  makes OAuth and confirmation emails fail silently.
+  makes confirmation and password reset emails fail silently. Not blocking:
+  stage 4b can be built and typechecked without it, only real email delivery
+  needs it done first.
 - 2026-08-06 Launch blocker, not a stage blocker: Supabase's built in email
   sender is rate limited and not for production. Resend has to be configured as
   custom SMTP in the Supabase dashboard before real buyers exist, or
@@ -82,16 +80,18 @@ This is the record of why the code looks the way it does.
 - 2026-08-06 Category and settings forms are plain server-action forms with no client JS, so failures travel back as a query parameter rather than a return value.
 - 2026-08-06 Admin nav sits at the bottom on a phone and the top on desktop, because that is where a thumb is when he is holding the phone one handed.
 - 2026-08-06 PLAN CHANGE: anonymous buyer sign in is dropped entirely. Buyers get real accounts, by email and password with confirmation or by Google. The owner uses the same sign in as everyone else and is only `profiles.role = 'owner'`, so `/admin/login` and the magic link go. One auth system rather than two. Recorded as stage 4b rather than an edit to stage 4, because stage 4 is already done and its history is not being rewritten.
-- 2026-08-06 Google OAuth credentials live in the Supabase dashboard, not in `.env.local`, because Supabase brokers the flow. The authorised redirect URI is the Supabase callback carrying the project ref, not a URL on our own domain, which is why dev and prod need separate Google clients.
+- 2026-08-06 Google OAuth credentials live in the Supabase dashboard, not in `.env.local`, because Supabase brokers the flow. The authorised redirect URI is the Supabase callback carrying the project ref, not a URL on our own domain, which is why dev and prod need separate Google clients. Superseded same day, see below.
+- 2026-08-06 PLAN CHANGE (same day, after the entry above): Google sign in is dropped before any code was written for it. Stage 4b is email and password only, through Supabase Auth. Left the two entries above rather than editing them, since they are an honest record that the plan changed twice in one session, not just once.
 
 ## Next session
 
 The two or three concrete things to pick up. Written for someone with no memory
 of this session, because that is exactly who reads it.
 
-- Stage 4b is next: real buyer accounts. Read `BUILD_PLAN.md` prompt 4b. Before
-  starting, do the dashboard work in `SETUP.md` section 2a, since Google sign in
-  cannot be verified without it.
+- Stage 4b is next: real buyer accounts, email and password only, no Google.
+  Read `BUILD_PLAN.md` prompt 4b. Nothing external blocks starting it; the
+  `SETUP.md` section 2a dashboard work (URL configuration, custom SMTP) only
+  needs doing before real email delivery matters, not before writing the code.
 - Stage 5 code is written and merged but unverified. Once 4b ships, sign up, run
   `update public.profiles set role = 'owner' where email = '<you>'`, then run the
   stage 5 exit check properly: a print with three photos, a variant and full
