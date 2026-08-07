@@ -71,13 +71,6 @@ export async function SiteHeader() {
         {/* Hard right: every control in one group, nothing floating in the
             middle of the bar. */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-3">
-          <Link href="/shop" className={cn(NAV_LINK, "hidden sm:inline-flex", FOCUS_RING)}>
-            Shop
-          </Link>
-          <Link href="/custom" className={cn(NAV_LINK, "hidden sm:inline-flex", FOCUS_RING)}>
-            Custom
-          </Link>
-
           <details className="relative">
             <summary className={cn(ICON_BUTTON, "list-none", FOCUS_RING)} aria-label="Search">
               <SearchIcon />
