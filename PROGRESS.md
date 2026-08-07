@@ -12,8 +12,8 @@ Current branch: main (feat/cart merged)
 | 2     | Design system                     | done        | feat/design-system                      | Verified 2026-08-06: `/styleguide` returns 200, 15 components. Contrast failures recorded under Decisions.                                                                                                                                                                                                                                                                                                                                       |
 | 3     | Database schema                   | done        | feat/db-schema                          | Verified 2026-08-06: both migrations on disk.                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 4     | Supabase wiring and owner auth    | done        | feat/auth                               | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present.                                                                                                                                                                                                                                                                                                                 |
-| 4b    | Real buyer accounts               | blocked     | feat/buyer-accounts                     | Code complete and merged 2026-08-06. NOT marked done: full click-through needs a real email confirmation, and Supabase's own sender rate limit was hit while testing. See Blockers.                                                                                                                                                                                                                                                              |
-| 5     | Admin product management          | blocked     | feat/admin-products                     | Code complete and merged. NOT marked done: the exit check needs a signed-in owner, and no way to become one exists until 4b ships. See Blockers.                                                                                                                                                                                                                                                                                                 |
+| 4b    | Real buyer accounts               | blocked     | feat/buyer-accounts                     | Mostly verified 2026-08-07 on the real dev project: sign up, email confirmation, sign in and the owner path into `/admin` all work end to end. Still NOT done: the "not the shop owner" page for a signed in non owner is untested, and the "Ask to buy" round trip has never been clicked through. See Blockers.                                                                                                                                |
+| 5     | Admin product management          | blocked     | feat/admin-products                     | `/admin` is reachable by a real signed in owner as of 2026-08-07, which unblocks testing. The exit check itself is still NOT run: no product has been created through the UI, so the three photos, variant, full specs and reload round trip, and the 390px pass, remain untested. Photo upload has still never touched real Storage.                                                                                                            |
 | 6     | Public catalogue and product page | done        | feat/storefront                         | Verified 2026-08-07 against the real dev project: a seeded active product showed on `/` and `/product/[slug]` with correct OG tags, a seeded draft did not and 404s directly. Category filter, search, sort and in-stock filter all checked with curl. Deliberate deviations recorded under Decisions.                                                                                                                                           |
 | 7     | Cart                              | blocked     | feat/cart                               | Code complete and merged 2026-08-07. Two of three exit checks verified against the real dev project: pricing comes only from the database, and archiving a product live during a test removed it from a priced cart with an explanation. NOT marked done: "cart survives a reload" is client-only, browser-local behaviour (localStorage) with no server surface to curl, so it is unverified by direct test, only by code review. See Blockers. |
 | 8     | Shipping layer                    | not started |                                         |                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -32,12 +32,13 @@ Status is one of: not started, in progress, blocked, done.
 Things that need a human. Date each one so a stale blocker is obvious.
 
 - 2026-08-06 Stage 15: BOX NOW sandbox credentials not issued yet.
-- 2026-08-06 No owner account exists. `profiles` has 0 rows. The sign up flow
-  now exists (stage 4b), but nobody has actually completed it: it needs a real,
-  deliverable email address, since Supabase rejects `example.com`/`example.org`
-  outright and the built in sender's rate limit was hit during testing (see the
-  SMTP blocker below). Sign up with a real email, confirm it, then run
-  `update public.profiles set role = 'owner' where email = '<you>'`.
+- 2026-08-07 RESOLVED: an owner account now exists. `g.papageorgiou005@gmail.com`
+  signed up through the deployed app, confirmed by email, and was promoted with
+  `update public.profiles set role = 'owner'`. Verified rather than assumed:
+  `is_owner()` returns true when the JWT subject claim is set to that account's
+  id, and the owner has since reached `/admin` in a browser. This also proved
+  the whole stage 4b chain on real infrastructure, including that the
+  `handle_new_user` trigger pulls `display_name` from the sign up form.
 - 2026-08-06 Stage 4b: Supabase Auth URL configuration needs setting per
   project, covering localhost, the Vercel preview wildcard and production. No
   MCP tool exposes auth URL config, so this is a dashboard job. Getting it wrong
@@ -50,7 +51,11 @@ Things that need a human. Date each one so a stale blocker is obvious.
   "email rate limit exceeded" after two live signUp() calls against the dev
   project. Resend has to be configured as custom SMTP in the Supabase
   dashboard before real buyers exist, or confirmation and reset emails will
-  quietly stop arriving.
+  quietly stop arriving. Update 2026-08-07: a real confirmation email did
+  arrive and the sign up completed, so the earlier failure was the transient
+  rate limit rather than a misconfiguration. That does not retire this
+  blocker: the built in sender is still rate limited and still not for
+  production, it simply was not blocking a single test signup.
 - 2026-08-07 Setting up Resend as custom SMTP needs a domain with DNS you
   control, which does not exist yet (the project has no hosting or domain).
   Deferred rather than forced: buying a domain just to unblock local sign up
@@ -59,27 +64,22 @@ Things that need a human. Date each one so a stale blocker is obvious.
   The still-open path is simply waiting for Supabase's own rate limit window
   to clear and retrying sign up with a real email.
 - 2026-08-06 Stage 9: Stripe test keys not in `.env.local` yet.
-- 2026-08-06 Stage 5: the exit check cannot be run. It asks for a product created
+- 2026-08-07 Stage 5: the exit check can now be run and has not been. It asks for a product created
   through the UI with three photos, a variant and full specs, round-tripped after
   a reload and checked at 390px. Every admin route is behind `requireOwner()`, so
-  none of it can be reached until a real account exists and is promoted to
-  owner, see the owner account blocker above. What was verified instead: the
+  an owner account now exists and `/admin` is reachable, so nothing external
+  blocks it any more, it simply has not been done. What was verified instead: the
   same round trip driven straight against the database, using the exact select
   the edit page runs. Three images came back in position order, the variant
   came back, every spec field survived, and deleting the product cascaded its
   images and variants away. The 390px pass is genuinely untested.
-- 2026-08-06 Stage 4b: its own exit checks that need a real signed in session
-  are unverified for the same reason as the stage 5 blocker above: no
-  confirmed account exists yet. Specifically untested by clicking through: a
-  full sign up, confirm by email, sign in cycle; `/admin` showing the plain
-  not owner page for a signed in non owner; and the sign in redirect actually
-  returning someone to a page they were on with state intact, since there is
-  no cart or chat yet to hold that state. What was verified instead: every
-  redirect and gate was checked directly against the running dev server with
-  curl, `/admin/login` is confirmed gone from disk (see the Decisions entry on
-  why an anonymous request to it still 307s rather than 404s), and a real
-  signUp() call against the dev project was made and correctly rejected only
-  by Supabase's own email validation and rate limit, never by an app bug.
+- 2026-08-07 Stage 4b: two exit items remain untested now that the rest is
+  proven. First, `/admin` showing the plain "not the shop owner" page to a
+  signed in non owner: this needs either a second account, or temporarily
+  setting the existing owner's role back to `customer`, reloading `/admin`,
+  and setting it back. Second, the "Ask to buy" round trip, signed out, with
+  a filled cart, returning to the cart still filled. That one only became
+  testable when stage 7 landed and has not been clicked through since.
 - 2026-08-07 Stage 7: "cart survives a reload" is unverified by direct test.
   It is purely client-side, browser-local behaviour (a `useSyncExternalStore`
   backed by localStorage), and there is no server endpoint or database row to
@@ -151,27 +151,29 @@ This is the record of why the code looks the way it does.
 - 2026-08-07 The cart store is close to 150 lines, over the "under 100 lines" guideline the brief gave. Correctness won over the target: safe SSR-matched hydration, input validation on whatever localStorage actually contains rather than trusting it, and the per-user merge logic all add real lines. Flagged rather than silently exceeded.
 - 2026-08-07 "Ask to buy" only implements the sign in wall for now: signed out, it redirects to `/sign-in?next=<cart path>`, which the exit-check-adjacent behaviour needs. Signed in, it currently does nothing, because checkout (stage 9) does not exist yet to hand off to. Same honest-gap pattern as stage 6's disabled buttons, just on a button that is real for half its job rather than disabled outright.
 - 2026-08-07 A temporary route handler (`src/app/api/dev-test-cart-pricing`) was added to exercise `priceCartLines()` through a real request context, since it needs `cookies()` and cannot be called from a standalone script. Removed before merging; nothing under `src/app/api` remains.
+- 2026-08-07 There are two separate copies of this project on the machine: this one at `~/repos/peri3dprints/peri3dprints` (91 commits, follows PLAN.md staging), and an older, architecturally different one at `C:\Users\Georg\Desktop\peri3dprints` (1 commit, entire app uncommitted, uses `[locale]` routing for Greek and English plus `/about` and `/contact`). The Desktop copy was holding port 3000, which is why the site appeared to have a different design when opened there. Left untouched rather than deleted: its work has never been committed and would be lost. Bilingual support is a real feature it has and this build does not, and CLAUDE.md never mentions i18n, so adopting it would be a plan change rather than a merge.
+
+- 2026-08-07 The Vercel deployment points at the **dev** Supabase project, not prod: that is where the owner account was created from the deployed site. Convenient for now, but SETUP.md section 6 wants production pointing at prod, and prod still has no migrations applied at all. Sorting that out is deploy work, not app work.
 
 ## Next session
 
 The two or three concrete things to pick up. Written for someone with no memory
 of this session, because that is exactly who reads it.
 
-- Stage 4b is code complete and merged to main, but not signed off: sign up
-  with a real, deliverable email address (not example.com/example.org, both
-  are rejected outright), confirm it, and confirm the header shows the
-  display name and the sign out link works. Custom SMTP or a wait for
-  Supabase's rate limit to reset may be needed first, since testing this
-  session hit "email rate limit exceeded" after two attempts.
-- Once one account is confirmed, promote it:
-  `update public.profiles set role = 'owner' where email = '<you>'`. That
-  single account then lets you verify both halves stage 4b still owes: the
-  owner path through `/admin`, and, by signing up a second address, the
-  plain "not the shop owner" page for a non owner.
-- Stage 5 code is written and merged but unverified for the same reason. Once
-  an owner account exists, run its exit check properly: a print with three
-  photos, a variant and full specs, reloaded, on a 390px viewport. Photo
-  upload has never run against real Storage, only against the schema.
+- An owner account exists and works: `g.papageorgiou005@gmail.com`, promoted
+  2026-08-07, confirmed reaching `/admin` in a browser. Nothing is blocked on
+  authentication any more.
+- The single highest value thing left is stage 5's exit check, which is now
+  runnable and has never been run: create a print through `/admin/products/new`
+  with three photos, a variant and full spec fields, save it, reload, and
+  confirm everything round trips. Do it at 390px, since that is the viewport
+  the admin was designed for. This is also the first time photo upload will
+  touch real Supabase Storage, so it is the most likely place to find a bug.
+- Doing that also fixes the storefront being empty: there are currently zero
+  products, so `/` and `/shop` correctly show their empty states.
+- Two small stage 4b items are still untested: the "not the shop owner" page
+  (temporarily set the owner's role back to `customer`, reload `/admin`, set
+  it back), and the "Ask to buy" signed out round trip with a filled cart.
 - Stage 6, the public storefront, is done and verified against real seeded
   data.
 - Stage 7, the cart, is code complete and merged. "Add to cart" on the
