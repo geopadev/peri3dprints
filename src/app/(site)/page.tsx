@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AnnouncementStrip } from "@/components/shop/announcement-strip";
+import { CategoryChips } from "@/components/shop/category-chips";
 import { CustomRequestBand } from "@/components/shop/custom-request-band";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { getHeroProducts } from "@/lib/products";
@@ -17,6 +18,12 @@ export default async function HomePage() {
   return (
     <main>
       <AnnouncementStrip />
+
+      {/* Hidden on a phone, where the drawer already lists every category and
+          this would just be a second copy of the same links. */}
+      <div className="hidden px-5 pt-5 sm:block">
+        <CategoryChips />
+      </div>
 
       {/* The hero is the stock itself. The shop name is a cell of the same
           grid rather than a box floated over it: "beside" from CLAUDE.md

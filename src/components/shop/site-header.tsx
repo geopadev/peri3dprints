@@ -10,13 +10,17 @@ import { SiteMenu } from "./site-menu";
 
 const ICON_BUTTON = "flex h-11 w-11 shrink-0 items-center justify-center";
 
+const NAV_LINK =
+  "inline-flex min-h-11 items-center px-1 font-mono text-xs tracking-utility uppercase underline";
+
 /**
  * Server Component: reads the session once per request, so the signed out
- * state needs no client JavaScript beyond the drawer and cart panel.
+ * state needs no client JavaScript beyond the cart panel.
  *
- * Navigation lives in the drawer rather than in the bar itself, which is what
- * keeps this from overflowing a phone: the bar only ever holds the menu
- * button, the logo, search and the cart.
+ * Two navigations, one per size. Below sm the links move into the drawer,
+ * because laying the display name plus three account links inline beside the
+ * logo, search and cart overflows a 390px viewport. From sm up they sit in the
+ * bar where there is room for them, and the drawer button is hidden.
  */
 export async function SiteHeader() {
   const supabase = await createClient();
@@ -40,23 +44,34 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b-2 border-ink bg-surface">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:gap-3 sm:px-5">
-        <SiteMenu
-          categories={categories}
-          signedIn={Boolean(user)}
-          displayName={displayName}
-          signOutAction={signOut}
-        />
+      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-5">
+        <div className="sm:hidden">
+          <SiteMenu
+            categories={categories}
+            signedIn={Boolean(user)}
+            displayName={displayName}
+            signOutAction={signOut}
+          />
+        </div>
 
         <Link
           href="/"
           className={cn(
-            "min-w-0 flex-1 truncate font-display text-base font-extrabold tracking-display sm:text-lg",
+            "min-w-0 flex-1 truncate font-display text-base font-extrabold tracking-display sm:flex-none sm:text-lg",
             FOCUS_RING,
           )}
         >
           Peri 3D Prints
         </Link>
+
+        <nav className="hidden flex-1 items-center gap-4 sm:flex">
+          <Link href="/shop" className={cn(NAV_LINK, FOCUS_RING)}>
+            Shop
+          </Link>
+          <Link href="/custom" className={cn(NAV_LINK, FOCUS_RING)}>
+            Custom
+          </Link>
+        </nav>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <details className="relative">
@@ -82,6 +97,31 @@ export async function SiteHeader() {
           </details>
 
           <CartTrigger whatsappNumber={settings.whatsappNumber} />
+
+          {user ? (
+            <nav className="hidden items-center gap-4 sm:flex">
+              <span className="hidden max-w-32 truncate font-mono text-xs tracking-utility uppercase lg:inline">
+                {displayName}
+              </span>
+              <Link href="/orders" className={cn(NAV_LINK, FOCUS_RING)}>
+                Orders
+              </Link>
+              <Link href="/messages" className={cn(NAV_LINK, FOCUS_RING)}>
+                Messages
+              </Link>
+              <form action={signOut}>
+                <button type="submit" className={cn(NAV_LINK, "cursor-pointer", FOCUS_RING)}>
+                  Sign out
+                </button>
+              </form>
+            </nav>
+          ) : (
+            <Link href="/sign-in" className="hidden sm:block">
+              <Button size="sm" variant="secondary">
+                Sign in
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>
