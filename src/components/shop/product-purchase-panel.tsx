@@ -41,14 +41,26 @@ export function ProductPurchasePanel({
   stockQty,
   whatsappHref,
 }: ProductPurchasePanelProps) {
-  const { addLine } = useCart();
+  const { lines, addLine } = useCart();
   const [selectedId, setSelectedId] = useState(variants[0]?.id ?? null);
   const [added, setAdded] = useState(false);
   const selected = variants.find((variant) => variant.id === selectedId) ?? null;
   const displayPriceCents = priceCents + (selected?.priceDeltaCents ?? 0);
-  const soldOut = !madeToOrder && stockQty === 0;
+
+  // Stock sits on the variant when there is one, on the product otherwise, and
+  // is unlimited for a made to order print. The server clamps this again in
+  // priceCartLines: this is only so the button stops being pressable, never
+  // the thing being trusted.
+  const availableStock = madeToOrder ? null : selected ? selected.stockQty : stockQty;
+  const inCart =
+    lines.find((line) => line.productId === productId && line.variantId === selectedId)?.quantity ??
+    0;
+
+  const soldOut = availableStock !== null && availableStock <= 0;
+  const atStockLimit = availableStock !== null && inCart >= availableStock;
 
   function onAddToCart() {
+    if (soldOut || atStockLimit) return;
     addLine(productId, selectedId, 1);
     setAdded(true);
   }
@@ -95,8 +107,12 @@ export function ProductPurchasePanel({
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-3">
-          <Button onClick={onAddToCart} disabled={soldOut}>
-            {soldOut ? "Out of stock" : "Add to cart"}
+          <Button onClick={onAddToCart} disabled={soldOut || atStockLimit}>
+            {soldOut
+              ? "Out of stock"
+              : atStockLimit
+                ? `All ${availableStock} in your cart`
+                : "Add to cart"}
           </Button>
           {/* Ask about this stays disabled: chat is stage 11 and does not
               exist yet. WhatsApp underneath is what actually works today. */}

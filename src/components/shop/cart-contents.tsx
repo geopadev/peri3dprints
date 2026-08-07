@@ -18,6 +18,7 @@ import { getPricedCart } from "@/app/(site)/cart/actions";
 const EMPTY_PRICED: PricedCart = {
   lines: [],
   removed: [],
+  reduced: [],
   subtotalCents: 0,
   totalWeightGrams: 0,
 };
@@ -50,6 +51,16 @@ export function CartContents({
       // Cleans the local store so a removed line does not keep coming back
       // as "removed" on every future price check.
       for (const gone of result.removed) removeLine(gone.productId, gone.variantId);
+      // Writes the server's clamped quantity back, so the local cart cannot
+      // keep claiming more than the shop actually has.
+      for (const priced of result.lines) {
+        const local = lines.find(
+          (l) => l.productId === priced.productId && l.variantId === priced.variantId,
+        );
+        if (local && local.quantity !== priced.quantity) {
+          updateQuantity(priced.productId, priced.variantId, priced.quantity);
+        }
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, lines]);
@@ -99,9 +110,23 @@ export function CartContents({
       {priced.removed.length > 0 && (
         <p className="rounded-card border-2 border-magenta p-3">
           {priced.removed.map((item) => item.title).join(", ")}{" "}
-          {priced.removed.length === 1 ? "is" : "are"} no longer available and{" "}
-          {priced.removed.length === 1 ? "was" : "were"} taken out of your cart.
+          {priced.removed.length === 1 ? "is" : "are"}{" "}
+          {priced.removed.every((item) => item.reason === "sold-out")
+            ? "sold out"
+            : "no longer available"}{" "}
+          and {priced.removed.length === 1 ? "was" : "were"} taken out of your cart.
         </p>
+      )}
+
+      {priced.reduced.length > 0 && (
+        <div className="rounded-card border-2 border-magenta p-3">
+          {priced.reduced.map((item) => (
+            <p key={item.title}>
+              I only have {item.available} of {item.title} left, so your cart was changed from{" "}
+              {item.requested}.
+            </p>
+          ))}
+        </div>
       )}
 
       <ul className="flex flex-col gap-4">
@@ -140,6 +165,7 @@ export function CartContents({
               <div className="mt-1 flex items-center gap-3">
                 <QuantityStepper
                   quantity={line.quantity}
+                  max={line.availableStock}
                   onChange={(next) =>
                     startTransition(() => updateQuantity(line.productId, line.variantId, next))
                   }
@@ -187,11 +213,16 @@ export function CartContents({
 
 function QuantityStepper({
   quantity,
+  max,
   onChange,
 }: {
   quantity: number;
+  /** null means unlimited: made to order, or no stock count kept. */
+  max: number | null;
   onChange: (next: number) => void;
 }) {
+  const atMax = max !== null && quantity >= max;
+
   return (
     <div className="flex items-center gap-2">
       <button
@@ -199,7 +230,7 @@ function QuantityStepper({
         aria-label="Decrease quantity"
         onClick={() => onChange(quantity - 1)}
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-card border-2 border-ink font-mono",
+          "flex h-11 w-11 items-center justify-center rounded-card border-2 border-ink font-mono",
           FOCUS_RING,
         )}
       >
@@ -211,14 +242,17 @@ function QuantityStepper({
       <button
         type="button"
         aria-label="Increase quantity"
+        disabled={atMax}
         onClick={() => onChange(quantity + 1)}
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-card border-2 border-ink font-mono",
+          "flex h-11 w-11 items-center justify-center rounded-card border-2 border-ink font-mono",
+          "disabled:cursor-not-allowed disabled:opacity-40",
           FOCUS_RING,
         )}
       >
         +
       </button>
+      {atMax && <span className="text-sm text-ink-soft">{max} left</span>}
     </div>
   );
 }
