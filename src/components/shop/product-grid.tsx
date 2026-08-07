@@ -5,6 +5,9 @@ import { ProductCard } from "./product-card";
 
 export type ProductGridProps = {
   products: ProductCardData[];
+  /** Rendered as the first cell of the grid, not floated over it. Used by the
+   * home page to sit the shop name among the stock rather than on top of it. */
+  lead?: React.ReactNode;
   emptyTitle?: string;
   emptyDescription?: string;
   className?: string;
@@ -19,16 +22,23 @@ function isTall(index: number): boolean {
 
 export function ProductGrid({
   products,
+  lead,
   emptyTitle = "Nothing here yet",
   emptyDescription = "Message me and I'll print what you want.",
   className,
 }: ProductGridProps) {
   if (products.length === 0) {
-    return <EmptyState title={emptyTitle} description={emptyDescription} />;
+    return (
+      <div className="flex flex-col gap-6">
+        {lead}
+        <EmptyState title={emptyTitle} description={emptyDescription} />
+      </div>
+    );
   }
 
   return (
     <div className={cn("grid grid-cols-2 items-start gap-4 sm:gap-5 lg:grid-cols-4", className)}>
+      {lead}
       {products.map((product, index) => (
         <ProductCard
           key={product.id}

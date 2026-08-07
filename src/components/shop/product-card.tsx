@@ -34,7 +34,10 @@ export function ProductCard({ product, fadeDelayMs, tall, className }: ProductCa
         className,
       )}
     >
-      <div className={cn("relative w-full bg-paper", tall ? "aspect-[3/4]" : "aspect-square")}>
+      {/* Square on a phone, where two ragged columns read as a mistake rather
+          than as a market table. The height variation only starts once there
+          is enough width for it to look deliberate. */}
+      <div className={cn("relative aspect-square w-full bg-paper", tall && "sm:aspect-[3/4]")}>
         {product.cover ? (
           <Image
             src={productImageUrl(product.cover.storagePath, 480)}

@@ -23,21 +23,24 @@ export default async function HomePage() {
         <CategoryChips />
       </div>
 
-      {/* The hero is the stock itself: the grid starts immediately, with the
-          shop name overlapping its top-left corner rather than sitting above
-          it in a separate banner. */}
-      <div className="relative px-5 py-6">
-        <div className="absolute top-6 left-5 z-10 w-64 rounded-card border-2 border-ink bg-surface px-4 py-3 shadow-hard sm:w-80">
-          <h1 className="font-display text-2xl sm:text-3xl">Peri 3D Prints</h1>
-          <p className="mt-1 text-sm sm:text-base">
-            Printed to order in Cyprus. Message me if you want it different.
-          </p>
-        </div>
-
+      {/* The hero is the stock itself. The shop name is a cell of the same
+          grid rather than a box floated over it: "beside" from CLAUDE.md
+          section 5, which is the half of "over or beside" that does not cover
+          up the products. It spans the full width on a phone and sits in the
+          corner of the grid from small screens up. */}
+      <div className="px-5 py-6">
         <ProductGrid
           products={products}
           emptyTitle="Nothing on the shelf yet"
           emptyDescription="Message me and I'll print what you want."
+          lead={
+            <div className="col-span-2 flex flex-col justify-center rounded-card border-2 border-ink bg-surface px-4 py-5 shadow-hard">
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl">Peri 3D Prints</h1>
+              <p className="mt-2">
+                Printed to order in Cyprus. Message me if you want it different.
+              </p>
+            </div>
+          }
         />
       </div>
 
