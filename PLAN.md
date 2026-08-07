@@ -137,6 +137,20 @@ Admin shell, product CRUD, image upload, categories, settings.
 fields, and it round-trips after a page reload. Test this on a 390px viewport,
 not just desktop.
 
+### Stage 5b (`feat/team-access`) People and roles
+
+An admin section listing everyone with an account, so the owner can promote
+someone to owner and demote them again without going near SQL. Closes a
+privilege escalation hole in the current schema, so it is a security fix as
+much as a feature.
+
+Full detail in `BUILD_PLAN.md` prompt 5b.
+
+**Exit:** a signed in buyer cannot make themselves an owner, proven by trying
+it and being refused. An owner can promote a second account from the admin and
+that account then reaches `/admin`. The last owner cannot demote themselves.
+Every change is written to an audit trail.
+
 ### Stage 6 (`feat/storefront`) Public catalogue and product page
 
 Home, shop, category, product detail. Hero is the stock itself, per `CLAUDE.md`
@@ -247,6 +261,7 @@ Current branch: <branch or main>
 | 4     | Supabase wiring and owner auth    | not started |        |                                |
 | 4b    | Real buyer accounts               | not started |        |                                |
 | 5     | Admin product management          | not started |        |                                |
+| 5b    | People and roles                  | not started |        |                                |
 | 6     | Public catalogue and product page | not started |        |                                |
 | 7     | Cart                              | not started |        |                                |
 | 8     | Shipping layer                    | not started |        |                                |

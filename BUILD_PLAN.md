@@ -349,6 +349,49 @@ Stop and report.
 
 ---
 
+## Prompt 5b: people and roles
+
+```
+Build the admin section for managing who can get into the admin, and close the hole that makes
+it necessary.
+
+Fix this first, it is a live privilege escalation:
+  profiles has `grant update on public.profiles to authenticated` and an RLS policy of
+  `id = auth.uid() or is_owner()`. RLS is row level and cannot restrict columns, so any signed in
+  buyer can update their own row and set role = 'owner'. Anyone with an account can make
+  themselves the shop owner today.
+
+  In a migration:
+    - revoke update on public.profiles from authenticated
+    - grant update (display_name, phone) on public.profiles to authenticated, so someone can still
+      edit their own name without being able to touch role or email
+    - add public.set_user_role(p_user_id uuid, p_role text), SECURITY DEFINER, pinned search_path,
+      which refuses unless is_owner(), refuses a role outside ('customer','owner'), and refuses to
+      demote the last remaining owner so the shop cannot be locked out of itself
+    - write every change to a role_changes audit table: who changed whom, from what to what, when.
+      An order has order_events for the same reason, and this matters more.
+    - revoke execute from public and anon, grant to authenticated only
+
+Routes:
+  /admin/people          list of everyone with an account: display name, email, role, joined date,
+                         search by name or email, with the owners first
+  Promote and demote are Server Actions calling set_user_role, never a direct table update.
+
+Requirements:
+  - The owner cannot demote themselves while they are the only owner. Say why, do not just fail.
+  - Confirm before promoting: a dialog naming the person, because this hands over the whole shop.
+  - Show the audit trail on the page, most recent first. Plain sentences, not a table of ids.
+  - Everything goes through requireOwner(), the page and every action.
+  - The word in the UI is owner, matching profiles.role, not admin. One word for one thing.
+
+Verify by trying the attack, not by reading the policy: as a non owner, attempt to set your own
+role to owner and confirm the database refuses it. Report exactly what you ran and what came back.
+
+Stop and report.
+```
+
+---
+
 ## Prompt 6: public catalogue and product page
 
 ```
