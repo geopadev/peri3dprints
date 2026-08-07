@@ -29,18 +29,27 @@ export const optionalEuroToCents = z
   })
   .transform((value) => (value === "" ? null : Math.round(Number(value) * 100)));
 
+/**
+ * These describe the domain value, not the raw form string. The form owns the
+ * string-to-value conversion before it ever gets here, exactly like
+ * `price_cents`, which has always been a number rather than "12.50".
+ *
+ * Both accept null, because "the owner left this box empty" is a real, valid
+ * answer for every optional field. Do not narrow these back to `z.string()`:
+ * `z.infer` reports the *output* type, so a mismatch between what a caller
+ * sends and what the schema parses is invisible to TypeScript and only shows
+ * up as a validation failure at runtime.
+ */
 const optionalPositiveInt = z
-  .string()
-  .trim()
-  .transform((value) => (value === "" ? null : Number(value)))
+  .union([z.number(), z.null()])
   .refine((value) => value === null || (Number.isInteger(value) && value >= 0), {
-    message: "Use a whole number.",
+    message: "Use a whole number, and not a negative one.",
   });
 
-const optionalText = z
-  .string()
-  .trim()
-  .transform((value) => (value === "" ? null : value));
+const optionalText = z.union([z.string(), z.null()]).transform((value) => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+});
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -70,10 +79,14 @@ export const productVariantSchema = z.object({
   id: optionalText,
   option_label: z.string().trim().min(1).default("Colour"),
   name: z.string().trim().min(1, "Give the option a name, like Glow green."),
+  // Same null-accepting shape as optionalText above, and for the same reason:
+  // the variant editor sends `string | null`, never a raw empty string.
   swatch_hex: z
-    .string()
-    .trim()
-    .transform((value) => (value === "" ? null : value))
+    .union([z.string(), z.null()])
+    .transform((value) => {
+      const trimmed = value?.trim();
+      return trimmed ? trimmed : null;
+    })
     .refine((value) => value === null || /^#[0-9a-fA-F]{6}$/.test(value), {
       message: "Colours look like #33FF88.",
     }),
