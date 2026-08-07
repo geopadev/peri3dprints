@@ -130,6 +130,8 @@ export type Database = {
           conversation_id: string
           created_at: string | null
           id: string
+          kind: string
+          payload: Json | null
           read_at: string | null
           sender_id: string | null
           sender_role: Database["public"]["Enums"]["sender_role"]
@@ -140,6 +142,8 @@ export type Database = {
           conversation_id: string
           created_at?: string | null
           id?: string
+          kind?: string
+          payload?: Json | null
           read_at?: string | null
           sender_id?: string | null
           sender_role: Database["public"]["Enums"]["sender_role"]
@@ -150,6 +154,8 @@ export type Database = {
           conversation_id?: string
           created_at?: string | null
           id?: string
+          kind?: string
+          payload?: Json | null
           read_at?: string | null
           sender_id?: string | null
           sender_role?: Database["public"]["Enums"]["sender_role"]
@@ -541,6 +547,9 @@ export type Database = {
       settings: {
         Row: {
           announcement: string | null
+          bank_account_name: string | null
+          bank_bic: string | null
+          bank_iban: string | null
           boxnow_origin_location_id: string | null
           id: number
           shop_open: boolean | null
@@ -549,6 +558,9 @@ export type Database = {
         }
         Insert: {
           announcement?: string | null
+          bank_account_name?: string | null
+          bank_bic?: string | null
+          bank_iban?: string | null
           boxnow_origin_location_id?: string | null
           id?: number
           shop_open?: boolean | null
@@ -557,6 +569,9 @@ export type Database = {
         }
         Update: {
           announcement?: string | null
+          bank_account_name?: string | null
+          bank_bic?: string | null
+          bank_iban?: string | null
           boxnow_origin_location_id?: string | null
           id?: number
           shop_open?: boolean | null
@@ -621,6 +636,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_order: {
+        Args: {
+          p_buyer_note?: string
+          p_country_code: string
+          p_email: string
+          p_full_name: string
+          p_items: Json
+          p_payment_method: Database["public"]["Enums"]["payment_method"]
+          p_phone: string
+          p_pickup_point: Json
+          p_shipping_address: Json
+          p_shipping_method_id: string
+        }
+        Returns: {
+          access_token: string
+          order_id: string
+          order_number: string
+          shipping_cents: number
+          subtotal_cents: number
+          total_cents: number
+        }[]
+      }
       generate_order_number: { Args: never; Returns: string }
       is_owner: { Args: never; Returns: boolean }
     }
