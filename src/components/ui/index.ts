@@ -29,6 +29,9 @@ export type { InputProps } from "./input";
 export { formatCents, Money } from "./money";
 export type { MoneyProps } from "./money";
 
+export { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "./popover";
+export type { PopoverContentProps } from "./popover";
+
 export { Select } from "./select";
 export type { SelectProps } from "./select";
 
