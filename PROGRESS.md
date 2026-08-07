@@ -14,6 +14,7 @@ Current branch: main (feat/shipping merged)
 | 4     | Supabase wiring and owner auth    | done        | feat/auth                               | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present.                                                                                                                                                                                                                                                                                                                 |
 | 4b    | Real buyer accounts               | blocked     | feat/buyer-accounts                     | Mostly verified 2026-08-07 on the real dev project: sign up, email confirmation, sign in and the owner path into `/admin` all work end to end. Still NOT done: the "not the shop owner" page for a signed in non owner is untested, and the "Ask to buy" round trip has never been clicked through. See Blockers.                                                                                                                                |
 | 5     | Admin product management          | blocked     | feat/admin-products                     | A real product was created through the UI 2026-08-07 and round trips: every spec field, the category link, the variant and the photo all persisted, and the photo is genuinely in Storage. Required a bug fix first, see Decisions. Still NOT done: only one photo was used, so multi-image reorder and cover selection are untested, and the 390px pass has not been confirmed.                                                                 |
+| 5b    | People and roles                  | not started |                                         | Added 2026-08-07. Closes a privilege escalation hole found the same day, plus an admin page for promoting and demoting owners. See Blockers.                                                                                                                                                                                                                                                                                                     |
 | 6     | Public catalogue and product page | done        | feat/storefront                         | Verified 2026-08-07 against the real dev project: a seeded active product showed on `/` and `/product/[slug]` with correct OG tags, a seeded draft did not and 404s directly. Category filter, search, sort and in-stock filter all checked with curl. Deliberate deviations recorded under Decisions.                                                                                                                                           |
 | 7     | Cart                              | blocked     | feat/cart                               | Code complete and merged 2026-08-07. Two of three exit checks verified against the real dev project: pricing comes only from the database, and archiving a product live during a test removed it from a priced cart with an explanation. NOT marked done: "cart survives a reload" is client-only, browser-local behaviour (localStorage) with no server surface to curl, so it is unverified by direct test, only by code review. See Blockers. |
 | 8     | Shipping layer                    | done        | feat/shipping                           | Verified 2026-08-07: `npx vitest run` passes 34 tests covering the free shipping threshold, weight tiers, method exclusion and zone resolution, including a suite pinned to the real seeded rates from the dev database. With all four BOX NOW env vars genuinely empty, the build succeeds and the provider returns a clean `not-configured` result, both asserted rather than assumed.                                                         |
@@ -31,6 +32,18 @@ Status is one of: not started, in progress, blocked, done.
 
 Things that need a human. Date each one so a stale blocker is obvious.
 
+- 2026-08-07 SECURITY, live in merged code: any signed in buyer can make
+  themselves the shop owner. `0001_init.sql` grants table-wide update on
+  `public.profiles` to `authenticated`, and the RLS policy is
+  `id = auth.uid() or is_owner()`. RLS is row level and cannot restrict
+  columns, so updating your own row to set `role = 'owner'` passes both the
+  grant and the policy, and the check constraint allows that value. Found by
+  reading `pg_policy` rather than by exploiting it: an attempt to run the
+  escalation was blocked by a safety classifier, correctly, since it is
+  indistinguishable from a real attack. Not urgent in the sense that the only
+  account today is the owner's own, and the site has no real buyers yet, but it
+  must be closed before anyone else signs up. Stage 5b fixes it: column level
+  grants plus a `set_user_role` SECURITY DEFINER function.
 - 2026-08-06 Stage 15: BOX NOW sandbox credentials not issued yet.
 - 2026-08-07 RESOLVED: an owner account now exists. `g.papageorgiou005@gmail.com`
   signed up through the deployed app, confirmed by email, and was promoted with
