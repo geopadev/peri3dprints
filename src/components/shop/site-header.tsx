@@ -7,6 +7,7 @@ import { getCategories, getSettings } from "@/lib/products";
 import { signOut } from "@/app/(site)/sign-in/actions";
 import { AccountMenu } from "./account-menu";
 import { CartTrigger } from "./cart-trigger";
+import { PersonIcon } from "./person-icon";
 import { SiteMenu } from "./site-menu";
 
 const ICON_BUTTON = "flex h-11 w-11 shrink-0 items-center justify-center";
@@ -50,12 +51,7 @@ export async function SiteHeader() {
             sits flush against the edge on every other size. */}
         <div className="flex min-w-0 items-center gap-2">
           <div className="sm:hidden">
-            <SiteMenu
-              categories={categories}
-              signedIn={Boolean(user)}
-              displayName={displayName}
-              signOutAction={signOut}
-            />
+            <SiteMenu categories={categories} />
           </div>
 
           <Link
@@ -97,15 +93,24 @@ export async function SiteHeader() {
           <CartTrigger whatsappNumber={settings.whatsappNumber} />
 
           {user ? (
-            <div className="hidden sm:block">
-              <AccountMenu displayName={displayName} signOutAction={signOut} />
-            </div>
+            <AccountMenu displayName={displayName} signOutAction={signOut} />
           ) : (
-            <Link href="/sign-in" className="hidden sm:block">
-              <Button size="sm" variant="secondary">
-                Sign in
-              </Button>
-            </Link>
+            <>
+              {/* Same slot, same icon as the account menu it becomes once
+                  signed in, so the control does not move on a phone. */}
+              <Link
+                href="/sign-in"
+                aria-label="Sign in"
+                className={cn(ICON_BUTTON, "sm:hidden", FOCUS_RING)}
+              >
+                <PersonIcon />
+              </Link>
+              <Link href="/sign-in" className="hidden sm:block">
+                <Button size="sm" variant="secondary">
+                  Sign in
+                </Button>
+              </Link>
+            </>
           )}
         </div>
       </div>

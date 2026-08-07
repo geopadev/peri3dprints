@@ -9,9 +9,6 @@ import { cn } from "@/lib/cn";
 
 export type SiteMenuProps = {
   categories: { slug: string; name: string }[];
-  signedIn: boolean;
-  displayName: string | null;
-  signOutAction: () => void | Promise<void>;
 };
 
 const LINK =
@@ -20,15 +17,19 @@ const LINK =
 const SECTION = "px-5 pt-5 pb-2 font-mono text-xs tracking-utility text-ink-soft uppercase";
 
 /**
- * The site's navigation. A left-anchored drawer rather than the horizontally
- * scrolling chip row this replaced: a phone user should not have to swipe
- * sideways to find out what the shop sells.
+ * The shop's navigation, and only the shop's: home, categories, custom
+ * requests. Anything belonging to the person signed in lives under the account
+ * icon on the right instead, so there is one place to look for each.
+ *
+ * A left-anchored drawer rather than the horizontally scrolling chip row this
+ * replaced: a phone user should not have to swipe sideways to find out what
+ * the shop sells.
  *
  * Radix handles the focus trap and escape key. No slide animation, because
  * CLAUDE.md section 3 names exactly three places motion lives and a drawer is
  * not one of them.
  */
-export function SiteMenu({ categories, signedIn, displayName, signOutAction }: SiteMenuProps) {
+export function SiteMenu({ categories }: SiteMenuProps) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -96,35 +97,6 @@ export function SiteMenu({ categories, signedIn, displayName, signOutAction }: S
             <Link href="/custom" onClick={close} className={cn(LINK, FOCUS_RING)}>
               Ask for a custom print
             </Link>
-
-            <p className={SECTION}>{signedIn ? (displayName ?? "Your account") : "Account"}</p>
-            {signedIn ? (
-              <>
-                <Link href="/account" onClick={close} className={cn(LINK, FOCUS_RING)}>
-                  Account
-                </Link>
-                <Link href="/orders" onClick={close} className={cn(LINK, FOCUS_RING)}>
-                  Orders
-                </Link>
-                <Link href="/messages" onClick={close} className={cn(LINK, FOCUS_RING)}>
-                  Messages
-                </Link>
-                <form action={signOutAction}>
-                  <button type="submit" className={cn(LINK, "w-full cursor-pointer", FOCUS_RING)}>
-                    Sign out
-                  </button>
-                </form>
-              </>
-            ) : (
-              <>
-                <Link href="/sign-in" onClick={close} className={cn(LINK, FOCUS_RING)}>
-                  Sign in
-                </Link>
-                <Link href="/sign-up" onClick={close} className={cn(LINK, FOCUS_RING)}>
-                  Create an account
-                </Link>
-              </>
-            )}
           </nav>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
