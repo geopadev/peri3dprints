@@ -5,22 +5,20 @@ import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories, getSettings } from "@/lib/products";
 import { signOut } from "@/app/(site)/sign-in/actions";
+import { AccountMenu } from "./account-menu";
 import { CartTrigger } from "./cart-trigger";
 import { SiteMenu } from "./site-menu";
 
 const ICON_BUTTON = "flex h-11 w-11 shrink-0 items-center justify-center";
 
-const NAV_LINK =
-  "inline-flex min-h-11 items-center px-1 font-mono text-xs tracking-utility uppercase underline";
-
 /**
  * Server Component: reads the session once per request, so the signed out
  * state needs no client JavaScript beyond the cart panel.
  *
- * Two navigations, one per size. Below sm the links move into the drawer,
- * because laying the display name plus three account links inline beside the
- * logo, search and cart overflows a 390px viewport. From sm up they sit in the
- * bar where there is room for them, and the drawer button is hidden.
+ * Navigation splits by size. Below sm everything lives in the drawer. From sm
+ * up the drawer button goes and the account links sit behind the person icon,
+ * which keeps the bar to four controls at every width instead of spilling the
+ * display name and three links across it.
  */
 export async function SiteHeader() {
   const supabase = await createClient();
@@ -96,22 +94,9 @@ export async function SiteHeader() {
           <CartTrigger whatsappNumber={settings.whatsappNumber} />
 
           {user ? (
-            <nav className="hidden items-center gap-3 sm:flex">
-              <span className="hidden max-w-32 truncate font-mono text-xs tracking-utility uppercase lg:inline">
-                {displayName}
-              </span>
-              <Link href="/orders" className={cn(NAV_LINK, FOCUS_RING)}>
-                Orders
-              </Link>
-              <Link href="/messages" className={cn(NAV_LINK, FOCUS_RING)}>
-                Messages
-              </Link>
-              <form action={signOut}>
-                <button type="submit" className={cn(NAV_LINK, "cursor-pointer", FOCUS_RING)}>
-                  Sign out
-                </button>
-              </form>
-            </nav>
+            <div className="hidden sm:block">
+              <AccountMenu displayName={displayName} signOutAction={signOut} />
+            </div>
           ) : (
             <Link href="/sign-in" className="hidden sm:block">
               <Button size="sm" variant="secondary">
