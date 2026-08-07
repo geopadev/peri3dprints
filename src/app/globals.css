@@ -46,6 +46,20 @@
   --shadow-hard-sm: 2px 2px 0 var(--color-ink);
 
   --ease-press: cubic-bezier(0.2, 0, 0, 1);
+
+  /* The catalogue grid's staggered fade-up. Delay is set per card inline. */
+  --animate-fade-up: fade-up 300ms ease-out forwards;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @layer base {
