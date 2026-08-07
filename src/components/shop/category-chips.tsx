@@ -3,13 +3,18 @@ import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { getCategories } from "@/lib/products";
 
+/**
+ * Wraps rather than scrolls sideways. These are filters on the shop page, not
+ * the site's navigation: that lives in the drawer behind the menu button, so
+ * nobody has to swipe a hidden row to find out what is for sale.
+ */
 export async function CategoryChips({ activeSlug }: { activeSlug?: string }) {
   const categories = await getCategories();
   if (categories.length === 0) return null;
 
   return (
-    <nav aria-label="Categories" className="overflow-x-auto">
-      <ul className="flex w-max gap-3 px-5 py-1">
+    <nav aria-label="Categories">
+      <ul className="flex flex-wrap gap-2">
         <li>
           <Chip href="/shop" active={!activeSlug}>
             All
