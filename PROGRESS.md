@@ -1,29 +1,29 @@
 # Progress
 
-Last updated: 2026-08-06
-Current stage: 4b
-Current branch: main (feat/buyer-accounts merged)
+Last updated: 2026-08-07
+Current stage: 6
+Current branch: main (feat/storefront merged)
 
 ## Ledger
 
-| Stage | Name                              | Status      | Branch                                  | Notes                                                                                                                                                                               |
-| ----- | --------------------------------- | ----------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Scaffold                          | done        | chore/scaffold (built as feat/scaffold) | Verified 2026-08-06: typecheck, lint, build all exit 0. `.env.local` ignored.                                                                                                       |
-| 2     | Design system                     | done        | feat/design-system                      | Verified 2026-08-06: `/styleguide` returns 200, 15 components. Contrast failures recorded under Decisions.                                                                          |
-| 3     | Database schema                   | done        | feat/db-schema                          | Verified 2026-08-06: both migrations on disk.                                                                                                                                       |
-| 4     | Supabase wiring and owner auth    | done        | feat/auth                               | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present.                                                    |
-| 4b    | Real buyer accounts               | blocked     | feat/buyer-accounts                     | Code complete and merged 2026-08-06. NOT marked done: full click-through needs a real email confirmation, and Supabase's own sender rate limit was hit while testing. See Blockers. |
-| 5     | Admin product management          | blocked     | feat/admin-products                     | Code complete and merged. NOT marked done: the exit check needs a signed-in owner, and no way to become one exists until 4b ships. See Blockers.                                    |
-| 6     | Public catalogue and product page | not started |                                         |                                                                                                                                                                                     |
-| 7     | Cart                              | not started |                                         |                                                                                                                                                                                     |
-| 8     | Shipping layer                    | not started |                                         |                                                                                                                                                                                     |
-| 9     | Checkout and payment              | not started |                                         |                                                                                                                                                                                     |
-| 10    | Orders, email, fulfilment         | not started |                                         |                                                                                                                                                                                     |
-| 11    | Chat                              | not started |                                         |                                                                                                                                                                                     |
-| 12    | Custom requests                   | not started |                                         |                                                                                                                                                                                     |
-| 13    | Polish                            | not started |                                         |                                                                                                                                                                                     |
-| 14    | Deploy preparation                | not started |                                         |                                                                                                                                                                                     |
-| 15    | BOX NOW go-live                   | blocked     |                                         | waiting on partner credentials                                                                                                                                                      |
+| Stage | Name                              | Status      | Branch                                  | Notes                                                                                                                                                                                                                                                                                                  |
+| ----- | --------------------------------- | ----------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | Scaffold                          | done        | chore/scaffold (built as feat/scaffold) | Verified 2026-08-06: typecheck, lint, build all exit 0. `.env.local` ignored.                                                                                                                                                                                                                          |
+| 2     | Design system                     | done        | feat/design-system                      | Verified 2026-08-06: `/styleguide` returns 200, 15 components. Contrast failures recorded under Decisions.                                                                                                                                                                                             |
+| 3     | Database schema                   | done        | feat/db-schema                          | Verified 2026-08-06: both migrations on disk.                                                                                                                                                                                                                                                          |
+| 4     | Supabase wiring and owner auth    | done        | feat/auth                               | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present.                                                                                                                                                                       |
+| 4b    | Real buyer accounts               | blocked     | feat/buyer-accounts                     | Code complete and merged 2026-08-06. NOT marked done: full click-through needs a real email confirmation, and Supabase's own sender rate limit was hit while testing. See Blockers.                                                                                                                    |
+| 5     | Admin product management          | blocked     | feat/admin-products                     | Code complete and merged. NOT marked done: the exit check needs a signed-in owner, and no way to become one exists until 4b ships. See Blockers.                                                                                                                                                       |
+| 6     | Public catalogue and product page | done        | feat/storefront                         | Verified 2026-08-07 against the real dev project: a seeded active product showed on `/` and `/product/[slug]` with correct OG tags, a seeded draft did not and 404s directly. Category filter, search, sort and in-stock filter all checked with curl. Deliberate deviations recorded under Decisions. |
+| 7     | Cart                              | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 8     | Shipping layer                    | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 9     | Checkout and payment              | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 10    | Orders, email, fulfilment         | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 11    | Chat                              | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 12    | Custom requests                   | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 13    | Polish                            | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 14    | Deploy preparation                | not started |                                         |                                                                                                                                                                                                                                                                                                        |
+| 15    | BOX NOW go-live                   | blocked     |                                         | waiting on partner credentials                                                                                                                                                                                                                                                                         |
 
 Status is one of: not started, in progress, blocked, done.
 
@@ -51,6 +51,13 @@ Things that need a human. Date each one so a stale blocker is obvious.
   project. Resend has to be configured as custom SMTP in the Supabase
   dashboard before real buyers exist, or confirmation and reset emails will
   quietly stop arriving.
+- 2026-08-07 Setting up Resend as custom SMTP needs a domain with DNS you
+  control, which does not exist yet (the project has no hosting or domain).
+  Deferred rather than forced: buying a domain just to unblock local sign up
+  testing would be solving the wrong problem. Deploying to Vercel does not
+  help either, a `*.vercel.app` address gives no DNS control to hand Resend.
+  The still-open path is simply waiting for Supabase's own rate limit window
+  to clear and retrying sign up with a real email.
 - 2026-08-06 Stage 9: Stripe test keys not in `.env.local` yet.
 - 2026-08-06 Stage 5: the exit check cannot be run. It asks for a product created
   through the UI with three photos, a variant and full specs, round-tripped after
@@ -105,6 +112,15 @@ This is the record of why the code looks the way it does.
 - 2026-08-06 Buyer facing pages moved into a (site) route group with its own layout that renders the header, kept separate from the true root layout. The root layout wraps /admin too, and /admin already has its own nav in the (shell) group's layout, so putting the header there directly would have stacked two navs on every admin page.
 - 2026-08-06 Cart merge-on-sign-in and the "Ask to buy" and chat sign in walls are not built in this stage. There is no cart, no product page and no chat yet (stages 6, 7 and 11), so there is nothing to gate or merge. What stage 4b delivers is the reusable primitive those stages call: /sign-in?next=<path>, safeNext() guarding it against an open redirect, and a return to that exact path after auth.
 - 2026-08-06 Supabase's own signUp() rejects `example.com` and `example.org` outright ("Email address is invalid"), separate from and in addition to its rate limiting. Worth knowing before reaching for those domains in any future live testing here, they will not get past validation at all.
+- 2026-08-07 PLAN CHANGE: Google sign in setup was deferred (no domain to verify with Resend yet), so stage 4b/5 sign off stayed blocked. Moved on to stage 6 rather than stall, on explicit direction, since it does not depend on a signed in session for its own exit check.
+- 2026-08-07 Add to cart and Ask about this render as real, visibly disabled buttons rather than being omitted or half-wired. Neither the cart (stage 7) nor chat (stage 11) exists yet. A disabled button reads as "coming", an unresponsive enabled one reads as a bug. WhatsApp, built from `settings.whatsapp_number`, sits directly under both as the one contact method that actually works today.
+- 2026-08-07 The header's cart badge is a static, honest zero, not a link: there is no `/cart` yet, and linking to one would 404. It becomes real and clickable when stage 7 lands.
+- 2026-08-07 No message icon in the header for signed out visitors, deviating from the literal brief. The existing signed in "Messages" text link already covers the destination once it exists (stage 11); adding a second, always visible icon with no chat behind it yet would have been a second dead element rather than one.
+- 2026-08-07 The custom request band on the home page links to `/custom`, which is stage 12's build and 404s until then. Kept anyway, unlike the cart/chat buttons: the band's own text and styling are genuinely useful now, and it is one page away rather than an entire missing system.
+- 2026-08-07 `getShopProducts` resolves a category slug to its id with a separate query rather than an embedded `categories!inner(slug)` join filter. Supabase's generated `select()` types parse the select string at compile time, and a select string that varies at runtime (present only when filtering by category) produced a `ParserError` type instead of the real row type. Products already carry `category_id`, so the join was never load-bearing, only the filter was.
+- 2026-08-07 The announcement strip was first built with a `--flame` background, which was wrong: section 3 gives flame to the primary button and nothing else. Caught and fixed before merging, not left in. It uses `--ink` with paper text instead, no accent colour at all.
+- 2026-08-07 The catalogue grid's "table of objects, not a spreadsheet" varying heights come from alternating the image aspect ratio per card (square vs 3:4) on a simple index pattern, not from a CSS masonry layout or a library. Rows still size to their tallest card and align items to the top, which is a legitimate, well supported way to get an irregular look in plain CSS Grid.
+- 2026-08-07 The header search box is a native `<details>`/`<summary>` disclosure with a plain GET form to `/shop?q=`, not a client component. No JavaScript is needed for either the toggle or the search itself.
 
 ## Next session
 
@@ -126,6 +142,9 @@ of this session, because that is exactly who reads it.
   an owner account exists, run its exit check properly: a print with three
   photos, a variant and full specs, reloaded, on a 390px viewport. Photo
   upload has never run against real Storage, only against the schema.
-- Stage 6 is the public storefront. It is not blocked on anything, but it
-  should come after 4b is signed off so the header and the "Ask to buy" wall
-  are built against a verified auth state rather than a merely compiled one.
+- Stage 6, the public storefront, is done and verified against real seeded
+  data. Its "Add to cart" and "Ask about this" buttons render disabled on
+  purpose, since stage 7 (cart) and stage 11 (chat) do not exist yet. When
+  those stages land, wire them up here rather than rebuilding this page.
+- Stage 7, the cart, is the natural next stage: nothing blocks it, and it is
+  what turns the disabled "Add to cart" button on the product page real.
