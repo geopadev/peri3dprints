@@ -42,7 +42,10 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b-2 border-ink bg-surface">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-5">
+      {/* Full bleed on purpose, not centred to max-w-5xl like the page
+          content. The bar holds one thing at each end, so centring it left a
+          dead gap outside the logo and the icons on a wide screen. */}
+      <div className="flex w-full items-center justify-between gap-3 px-3 py-3 sm:px-4">
         {/* Hard left: the drawer button only exists on a phone, so the name
             sits flush against the edge on every other size. */}
         <div className="flex min-w-0 items-center gap-2">
