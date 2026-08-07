@@ -1,12 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Button, Money } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
+import { useCart } from "@/hooks/use-cart";
 import type { ProductVariantData } from "@/lib/products";
 
 export type ProductPurchasePanelProps = {
+  productId: string;
   priceCents: number;
   variants: ProductVariantData[];
   madeToOrder: boolean;
@@ -30,6 +33,7 @@ function stockLine(
 }
 
 export function ProductPurchasePanel({
+  productId,
   priceCents,
   variants,
   madeToOrder,
@@ -37,9 +41,17 @@ export function ProductPurchasePanel({
   stockQty,
   whatsappHref,
 }: ProductPurchasePanelProps) {
+  const { addLine } = useCart();
   const [selectedId, setSelectedId] = useState(variants[0]?.id ?? null);
+  const [added, setAdded] = useState(false);
   const selected = variants.find((variant) => variant.id === selectedId) ?? null;
   const displayPriceCents = priceCents + (selected?.priceDeltaCents ?? 0);
+  const soldOut = !madeToOrder && stockQty === 0;
+
+  function onAddToCart() {
+    addLine(productId, selectedId, 1);
+    setAdded(true);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -55,7 +67,10 @@ export function ProductPurchasePanel({
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
-                onClick={() => setSelectedId(variant.id)}
+                onClick={() => {
+                  setSelectedId(variant.id);
+                  setAdded(false);
+                }}
                 className={cn(
                   "inline-flex min-h-11 items-center gap-2 rounded-pill border-2 border-ink px-3",
                   isSelected ? "bg-ink text-paper" : "bg-surface text-ink",
@@ -80,17 +95,28 @@ export function ProductPurchasePanel({
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-3">
-          {/* Disabled on purpose: the cart (stage 7) and chat (stage 11) do
-              not exist yet. Shown rather than omitted, so the page reads as
-              "coming, not broken", with WhatsApp underneath as what actually
-              works right now. */}
-          <Button disabled>Add to cart</Button>
+          <Button onClick={onAddToCart} disabled={soldOut}>
+            {soldOut ? "Out of stock" : "Add to cart"}
+          </Button>
+          {/* Ask about this stays disabled: chat is stage 11 and does not
+              exist yet. WhatsApp underneath is what actually works today. */}
           <Button variant="secondary" disabled>
             Ask about this
           </Button>
         </div>
+
+        {added && (
+          <p className="text-sm">
+            Added.{" "}
+            <Link href="/cart" className="font-semibold underline">
+              View cart
+            </Link>
+            .
+          </p>
+        )}
+
         <p className="text-sm">
-          The cart and chat are not open yet.{" "}
+          Chat is not open yet.{" "}
           {whatsappHref ? (
             <a
               href={whatsappHref}
