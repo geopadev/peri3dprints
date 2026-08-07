@@ -1,10 +1,12 @@
 "use client";
 
+import { FOCUS_RING } from "@/components/ui/focus-ring";
+import { cn } from "@/lib/cn";
 import { useCart } from "@/hooks/use-cart";
 import { useHasMounted } from "@/hooks/use-has-mounted";
 import { CartPanel } from "./cart-panel";
 
-const ICON_BUTTON = "flex h-11 w-11 items-center justify-center";
+const ICON_BUTTON = "flex h-11 w-11 shrink-0 items-center justify-center";
 
 export function CartTrigger({ whatsappNumber }: { whatsappNumber: string | null }) {
   const mounted = useHasMounted();
@@ -19,7 +21,7 @@ export function CartTrigger({ whatsappNumber }: { whatsappNumber: string | null 
         <button
           type="button"
           aria-label={`Cart, ${count} items`}
-          className={`relative ${ICON_BUTTON}`}
+          className={cn("relative", ICON_BUTTON, FOCUS_RING)}
         >
           <CartIcon />
           <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-pill border-2 border-ink bg-surface font-mono text-[10px] leading-none">
