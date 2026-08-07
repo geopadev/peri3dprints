@@ -3,7 +3,9 @@ import { Button, Input } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/server";
+import { getSettings } from "@/lib/products";
 import { signOut } from "@/app/(site)/sign-in/actions";
+import { CartTrigger } from "./cart-trigger";
 
 const NAV_LINK =
   "inline-flex min-h-11 items-center px-1 font-mono text-xs tracking-utility uppercase underline";
@@ -18,9 +20,12 @@ const ICON_BUTTON = "flex h-11 w-11 items-center justify-center";
  */
 export async function SiteHeader() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    {
+      data: { user },
+    },
+    settings,
+  ] = await Promise.all([supabase.auth.getUser(), getSettings()]);
 
   let displayName: string | null = null;
   if (user) {
@@ -65,15 +70,7 @@ export async function SiteHeader() {
             </form>
           </details>
 
-          {/* Static for now: the cart itself is stage 7's build. Shown as a
-              real, honest zero rather than a link to a page that does not
-              exist yet. */}
-          <span aria-label="Cart, 0 items" className={cn("relative", ICON_BUTTON)}>
-            <CartIcon />
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-pill border-2 border-ink bg-surface font-mono text-[10px] leading-none">
-              0
-            </span>
-          </span>
+          <CartTrigger whatsappNumber={settings.whatsappNumber} />
 
           {user ? (
             <nav className="flex items-center gap-4">
@@ -110,22 +107,6 @@ function SearchIcon() {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
       <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
       <path d="M17 17L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
-    </svg>
-  );
-}
-
-function CartIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path
-        d="M2 3h2l1.6 9.6a2 2 0 0 0 2 1.7h6.6a2 2 0 0 0 2-1.6L18 6H5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="square"
-        strokeLinejoin="round"
-      />
-      <circle cx="8" cy="18" r="1.3" fill="currentColor" />
-      <circle cx="14.5" cy="18" r="1.3" fill="currentColor" />
     </svg>
   );
 }
