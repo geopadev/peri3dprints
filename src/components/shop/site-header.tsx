@@ -44,36 +44,40 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b-2 border-ink bg-surface">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-5">
-        <div className="sm:hidden">
-          <SiteMenu
-            categories={categories}
-            signedIn={Boolean(user)}
-            displayName={displayName}
-            signOutAction={signOut}
-          />
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-5">
+        {/* Hard left: the drawer button only exists on a phone, so the name
+            sits flush against the edge on every other size. */}
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="sm:hidden">
+            <SiteMenu
+              categories={categories}
+              signedIn={Boolean(user)}
+              displayName={displayName}
+              signOutAction={signOut}
+            />
+          </div>
+
+          <Link
+            href="/"
+            className={cn(
+              "truncate font-display text-base font-extrabold tracking-display sm:text-lg",
+              FOCUS_RING,
+            )}
+          >
+            Peri 3D Prints
+          </Link>
         </div>
 
-        <Link
-          href="/"
-          className={cn(
-            "min-w-0 flex-1 truncate font-display text-base font-extrabold tracking-display sm:flex-none sm:text-lg",
-            FOCUS_RING,
-          )}
-        >
-          Peri 3D Prints
-        </Link>
-
-        <nav className="hidden flex-1 items-center gap-4 sm:flex">
-          <Link href="/shop" className={cn(NAV_LINK, FOCUS_RING)}>
+        {/* Hard right: every control in one group, nothing floating in the
+            middle of the bar. */}
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+          <Link href="/shop" className={cn(NAV_LINK, "hidden sm:inline-flex", FOCUS_RING)}>
             Shop
           </Link>
-          <Link href="/custom" className={cn(NAV_LINK, FOCUS_RING)}>
+          <Link href="/custom" className={cn(NAV_LINK, "hidden sm:inline-flex", FOCUS_RING)}>
             Custom
           </Link>
-        </nav>
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <details className="relative">
             <summary className={cn(ICON_BUTTON, "list-none", FOCUS_RING)} aria-label="Search">
               <SearchIcon />
@@ -99,7 +103,7 @@ export async function SiteHeader() {
           <CartTrigger whatsappNumber={settings.whatsappNumber} />
 
           {user ? (
-            <nav className="hidden items-center gap-4 sm:flex">
+            <nav className="hidden items-center gap-3 sm:flex">
               <span className="hidden max-w-32 truncate font-mono text-xs tracking-utility uppercase lg:inline">
                 {displayName}
               </span>
