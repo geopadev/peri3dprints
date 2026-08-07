@@ -175,17 +175,35 @@ locker picker.
 method exclusion and zone resolution. With BOX NOW env vars empty, the app still
 builds and the provider returns a clean "not configured" result.
 
-### Stage 9 (`feat/checkout`) Checkout and payment
+### Stage 9 (`feat/checkout`) Ask to buy, and the order conversation
 
-Three-section checkout, payment adapters, Stripe Checkout, webhook handler.
+PLAN CHANGE 2026-08-07. There is no card checkout. "Ask to buy" turns the cart
+into an order and opens a conversation about it. The seller sends a payment
+link, most likely Revolut, in that conversation, and marks the order paid when
+the money lands. Delivery details are collected in the conversation too, not on
+a checkout page. Stripe, cash on delivery and bank transfer move to the backlog
+in `BUILD_PLAN.md` "After launch", behind the `PaymentMethod` interface that
+already exists for them.
 
-**Exit:** a Stripe test-card order completes end to end and the webhook flips
-`payment_status` to paid. A cash on delivery order and a bank transfer order both
-reach the confirmation page. Report the test cards you used. Confirm no price is
-read from the request body.
+Order creation, contact details, and the `create_order` RPC that recomputes
+every price server side.
 
-Blocked on Stripe test keys only, which are free and immediate. Live keys are not
-needed until deploy.
+**Exit:** "Ask to buy" on a filled cart creates an order and a conversation
+about it, and empties the cart. The order lands as `pending` and `unpaid`. No
+price, shipping cost or total is read from the request body: prove it by
+calling the RPC by hand with a wrong total and showing it ignored.
+
+### Stage 9b (`feat/payment-links`) Payment links and marking paid
+
+The owner's side of the same flow: send a payment link into an order's
+conversation, and mark the order paid once the money arrives.
+
+Full detail in `BUILD_PLAN.md` prompt 9b.
+
+**Exit:** the owner can post a payment link into an order conversation and the
+buyer sees it as a message with the amount owed. Marking paid flips
+`payment_status` to paid, writes an `order_events` row saying who did it and
+when, and is refused for anyone who is not the owner.
 
 ### Stage 10 (`feat/orders`) Orders, email, fulfilment
 
@@ -198,13 +216,16 @@ no em dashes.
 
 ### Stage 11 (`feat/chat`) Chat
 
-Buyer widget, owner inbox, Realtime, attachments, WhatsApp link.
+Buyer widget, owner inbox, Realtime, attachments, WhatsApp link, and the two
+message types the order flow depends on: a payment link from the seller, and a
+delivery details form the buyer fills in without leaving the conversation.
 
 **Exit:** two browser windows, buyer and owner, exchange messages with no
 refresh. Reading another conversation's attachment while signed in as a
 different buyer is denied. Show me the denial. Opening chat while signed out
 sends the visitor to `/sign-in?next=...` and returns them to the open chat
-afterwards.
+afterwards. The buyer can open the delivery details form from inside the
+conversation, submit it, and the owner sees the address as a message.
 
 ### Stage 12 (`feat/custom-requests`) Custom requests
 
@@ -265,7 +286,8 @@ Current branch: <branch or main>
 | 6     | Public catalogue and product page | not started |        |                                |
 | 7     | Cart                              | not started |        |                                |
 | 8     | Shipping layer                    | not started |        |                                |
-| 9     | Checkout and payment              | not started |        |                                |
+| 9     | Ask to buy, order conversation    | not started |        |                                |
+| 9b    | Payment links and marking paid    | not started |        |                                |
 | 10    | Orders, email, fulfilment         | not started |        |                                |
 | 11    | Chat                              | not started |        |                                |
 | 12    | Custom requests                   | not started |        |                                |

@@ -506,40 +506,60 @@ resolution. Stop and report.
 
 ---
 
-## Prompt 9: checkout and payment
+## Prompt 9: ask to buy, and the order conversation
+
+PLAN CHANGE 2026-08-07. The card checkout this prompt used to describe is gone. Payment happens
+in the conversation: the seller sends a link, most likely Revolut, and marks the order paid when
+the money lands. Stripe, cash on delivery and bank transfer are in "After launch" below. The
+`PaymentMethod` interface stays, so adding them later is an implementation not a rewrite.
 
 ```
-Build checkout. One page, three sections revealed in sequence, no multi-page wizard.
+Build "Ask to buy". No checkout page, no payment gateway.
 
-Section 1, contact: name, email, phone (with a +357 default and international format validation,
-BOX NOW requires it).
+Pressing it on a filled cart:
+  - Signed out, goes to /sign-in?next=<cart path> and comes back with the cart intact. That wall
+    already exists, do not rebuild it.
+  - Signed in, collects the little that is needed up front in one small form: name, email, phone
+    with a +357 default, and an optional note. Prefill from the profile.
+  - Calls the create_order RPC, which already exists and recomputes every price, the shipping cost
+    and the zone server side. Do not add a second path that writes orders.
+  - Opens a conversation of kind 'general' linked to the order, seeded with a first message from
+    the buyer naming what they want.
+  - Empties the cart and lands on the order page.
 
-Section 2, delivery: pick a shipping method from the quotes returned by the shipping layer, grouped
-as "Cyprus lockers", "Cyprus delivery", "International". Selecting a requires_locker method reveals
-LockerPicker. Selecting anything else reveals the address form with country select. Re-quote when
-the country changes.
+Delivery is not chosen here. Whether it is posted or collected is worked out in the conversation,
+because half of these are people who will collect at a market and do not need an address at all.
+Pass the collect-in-person method as the order's shipping method to begin with, and let the
+delivery details form in prompt 11 change it.
 
-Section 3, payment: card (Stripe), cash on delivery (only when the chosen method supports_cod and
-zone is cy), bank transfer (only when zone is cy). Show the total breakdown above the button.
+payment_method: add a 'link' value to the payment_method enum in a migration and use it. A Revolut
+link is not a card, not cash on delivery and not a bank transfer, and pretending otherwise makes
+the orders list lie about how people actually paid.
 
-Server side:
-  - src/lib/payments/ with a PaymentMethod interface and three implementations.
-  - A single createOrder Server Action that: revalidates the cart against the database, recomputes
-    subtotal, re-quotes shipping, writes the order and order_items inside one transaction via an
-    RPC, then hands off to the payment method.
-  - card: Stripe Checkout Session in EUR, line items from the recomputed order, shipping as its own
-    line item, metadata { order_id }, success and cancel URLs including the order access_token.
-  - cod and bank_transfer: order goes straight to status 'awaiting_payment' or 'pending' and the
-    buyer lands on the confirmation page with instructions.
-  - app/api/webhooks/stripe/route.ts: raw body, signature verified against STRIPE_WEBHOOK_SECRET,
-    handles checkout.session.completed and charge.refunded, idempotent on event id via order_events,
-    updates payment_status and status, then triggers the confirmation email.
+Stop and report.
+```
 
-Never read a price, a shipping cost, or a total from the request body. Recompute all three.
-Return an explicit error if the recomputed total differs from what the browser last showed, and
-tell the buyer the price changed rather than silently charging the new amount.
+---
 
-Stop and report, and list exactly which Stripe test cards you used to verify.
+## Prompt 9b: payment links and marking paid
+
+```
+The owner's side of the same flow.
+
+  /admin/orders/[id]
+    - A box to paste a payment link, which posts it into that order's conversation as a message
+      the buyer sees, with the amount owed alongside it. Validate that it is an https URL, and
+      nothing else: do not try to guess whether it is really Revolut.
+    - A "Mark as paid" action. Flips payment_status to paid and status to 'paid', writes an
+      order_events row recording who marked it and when, and is refused for anyone who is not the
+      owner. It is a Server Action through requireOwner(), never a table update from the client.
+    - A "Mark as refunded" action doing the same in reverse.
+
+Money is never inferred from the link or from anything the buyer says. The owner presses the
+button because he saw the money arrive. That is the whole trust model here, and it is the right
+one for a one person shop taking Revolut links.
+
+Stop and report.
 ```
 
 ---
@@ -603,6 +623,27 @@ Owner side:
                             prefills a draft product or a manual order
   - Realtime subscription so new messages arrive without a refresh.
   - Canned replies he can edit in settings, inserted with one tap. Three defaults, written plainly.
+
+Two message types beyond plain text, because the order flow runs through this conversation and not
+through a checkout page:
+
+  Payment link, sent by the owner (built in prompt 9b, rendered here)
+    - Shows as a card in the thread: the amount owed, and a button that opens the link.
+    - Only the owner can send one. A buyer posting a link is just text.
+
+  Delivery details, opened by the buyer
+    - A button in the conversation, shown when the order still has no address, opening a Dialog
+      with: full name, phone, address lines, city, postal code, country select, and a choice
+      between having it posted and collecting it at a market.
+    - Submitting writes the address onto the order, re-quotes shipping through the shipping layer
+      for the country given, updates shipping_cents and total_cents, and posts a message into the
+      conversation summarising what was entered so the owner sees it in the thread rather than
+      having to go and look.
+    - Choosing collection instead clears the address and sets the collect-in-person method, so the
+      shipping cost goes to zero.
+    - It is a Dialog opened from inside the chat, not a separate page: the buyer never loses the
+      conversation. Radix Dialog, focus trapped, per CLAUDE.md section 8.
+    - Re-quoting happens server side from the database. Never take a shipping cost from the form.
 
 Storage policy on chat-uploads: a buyer can read and write only under their own conversation prefix,
 the owner can read everything. Verify by trying to read another conversation's file while signed in
@@ -716,6 +757,15 @@ Stop and report.
 
 Things worth doing later, in rough priority order. Do not build them now.
 
+0. **Card, cash on delivery and bank transfer.** Moved here 2026-08-07: payment is a link the
+   seller sends in the conversation for now. These were specified in detail in the old prompt 9,
+   which is in the git history if it is wanted back. What survives in the codebase for them:
+   `src/lib/payments/` with a `PaymentMethod` interface, the `payment_method` enum already
+   carrying `card`, `cod` and `bank_transfer`, the `stripe_session_id` and `stripe_payment_intent`
+   columns on orders, and the bank detail columns on settings. Adding one is an implementation
+   behind an existing interface, not a rewrite. Stripe needs test keys, free and immediate; cash
+   on delivery needs the BOX NOW account for the locker case, since that is a separate product on
+   their side per SETUP.md section 5.
 1. Greek language toggle. The market is bilingual and the buyer age group is comfortable in both,
    but shipping English first is fine. Structure copy in `next-intl` from the start if you have
    the appetite, or accept a refactor later.
