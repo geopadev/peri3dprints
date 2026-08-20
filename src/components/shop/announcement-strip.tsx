@@ -5,8 +5,9 @@ export async function AnnouncementStrip() {
   const { announcement } = await getSettings();
   if (!announcement) return null;
 
-  // Ink, not flame: section 3 gives flame to the primary button and nothing
-  // else, and this strip has no button to compete with anyway.
+  // Ink, not an accent. This bar sits above the fold on every page, so a hue
+  // here would spend the section's accent before the page has started. The
+  // masthead below it is the one loud block.
   return (
     <div className="border-b-2 border-ink bg-ink px-5 py-2 text-center">
       <p className="font-mono text-xs tracking-utility text-paper uppercase">{announcement}</p>

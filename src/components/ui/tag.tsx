@@ -2,8 +2,10 @@ import { cn } from "@/lib/cn";
 import { UTILITY_TEXT } from "@/components/ui/type";
 
 /**
- * No flame tone on purpose: CLAUDE.md section 3 gives flame to the primary
- * button and nothing else.
+ * No flame tone on purpose. Flame has exactly two jobs, the primary button and
+ * the loud block that opens a section, and a tag is neither. A tag that could
+ * be flame would end up on a card, which is the one place the colour rules
+ * keep quiet so the spec strip stays the loudest thing there.
  */
 export type TagTone = "neutral" | "stock" | "sale" | "info" | "made";
 export type TagSize = "sm" | "md";
