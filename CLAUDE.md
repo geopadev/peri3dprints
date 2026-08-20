@@ -58,8 +58,17 @@ It is workshop-playful, not corporate-friendly. Do not invent a different direct
 --magenta:  #FF3D8B;  /* sale tags, custom-request accent */
 ```
 
-Rules: one loud accent per screen. `--flame` owns the primary button and nothing else.
-Never build a gradient between two accents. Never use `--ink-soft` for anything a buyer must read.
+Rules: one loud accent per section, and never two competing inside one card. `--flame` owns the
+primary button and the block that opens a section, nothing else. Never build a gradient between
+two accents. Never use `--ink-soft` for anything a buyer must read.
+
+Accents are backgrounds carrying `--ink` text, never text colours on a light background. Measured:
+ink reads 5.92 on flame, 7.72 on cyan, 12.54 on lime and 5.48 on magenta, all passing AA. White
+fails on all four. A card body stays `--surface` so the spec strip is the loudest thing on it:
+colour arrives around cards, as bands, chips and one small badge, never as the card itself.
+
+`--magenta` means sale and price drops. It is not the error colour: errors are an `--ink` border on
+a faint tint, so a discount badge and a declined card never look the same.
 
 ### Type
 
