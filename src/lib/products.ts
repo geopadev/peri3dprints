@@ -14,6 +14,10 @@ export type ProductCardData = {
   slug: string;
   title: string;
   priceCents: number;
+  /** Set only when it is above priceCents, which is what makes it a sale. */
+  compareAtCents: number | null;
+  stockQty: number | null;
+  madeToOrder: boolean;
   spec: ProductSpec;
   cover: { storagePath: string; altText: string } | null;
 };
@@ -23,6 +27,9 @@ type CardRow = {
   slug: string;
   title: string;
   price_cents: number;
+  compare_at_cents: number | null;
+  stock_qty: number | null;
+  made_to_order: boolean | null;
   material: string | null;
   weight_grams: number | null;
   length_mm: number | null;
@@ -34,7 +41,7 @@ type CardRow = {
 };
 
 const CARD_FIELDS =
-  "id, slug, title, price_cents, material, weight_grams, length_mm, width_mm, height_mm, print_minutes, spec_note, product_images(storage_path, alt_text, position)";
+  "id, slug, title, price_cents, compare_at_cents, stock_qty, made_to_order, material, weight_grams, length_mm, width_mm, height_mm, print_minutes, spec_note, product_images(storage_path, alt_text, position)";
 
 function toSpec(row: CardRow): ProductSpec {
   const hasDims = row.length_mm && row.width_mm && row.height_mm;
@@ -58,6 +65,10 @@ function toCardData(row: CardRow): ProductCardData {
     slug: row.slug,
     title: row.title,
     priceCents: row.price_cents,
+    compareAtCents:
+      row.compare_at_cents && row.compare_at_cents > row.price_cents ? row.compare_at_cents : null,
+    stockQty: row.stock_qty,
+    madeToOrder: row.made_to_order ?? true,
     spec: toSpec(row),
     cover: first ? { storagePath: first.storage_path, altText: first.alt_text } : null,
   };
