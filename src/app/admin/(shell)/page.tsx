@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card, Tag } from "@/components/ui";
+import { Card, Tag, UTILITY_TEXT } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -47,19 +47,19 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
-          <p className="font-mono text-xs tracking-utility uppercase">Messages</p>
+          <p className={UTILITY_TEXT}>Messages</p>
           <p className="mt-2 text-3xl">{unread.count ?? 0}</p>
           <p className="mt-1">waiting on a reply</p>
         </Card>
 
         <Card>
-          <p className="font-mono text-xs tracking-utility uppercase">Orders</p>
+          <p className={UTILITY_TEXT}>Orders</p>
           <p className="mt-2 text-3xl">{needsAction.count ?? 0}</p>
           <p className="mt-1">need something doing</p>
         </Card>
 
         <Card>
-          <p className="font-mono text-xs tracking-utility uppercase">Drafts</p>
+          <p className={UTILITY_TEXT}>Drafts</p>
           <p className="mt-2 text-3xl">{drafts.count ?? 0}</p>
           <p className="mt-1">not on the shelf yet</p>
         </Card>

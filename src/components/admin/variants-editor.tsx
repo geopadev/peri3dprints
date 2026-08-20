@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field, Input, UTILITY_TEXT } from "@/components/ui";
 import type { ProductVariantInput } from "@/lib/validation/product";
 
 export type VariantsEditorProps = {
@@ -46,9 +46,7 @@ export function VariantsEditor({ variants, onChange }: VariantsEditorProps) {
             className="flex flex-col gap-3 rounded-card border-2 border-ink bg-surface p-3"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-xs tracking-utility uppercase">
-                Option {index + 1}
-              </span>
+              <span className={UTILITY_TEXT}>Option {index + 1}</span>
               <Button
                 type="button"
                 variant="ghost"

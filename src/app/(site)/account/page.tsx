@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Card } from "@/components/ui";
+import { Card, UTILITY_TEXT } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/supabase/require-session";
 import { ChangePasswordForm } from "./change-password-form";
@@ -24,11 +24,11 @@ export default async function AccountPage() {
 
       <Card className="flex flex-col gap-3">
         <div>
-          <p className="font-mono text-xs tracking-utility uppercase">Name</p>
+          <p className={UTILITY_TEXT}>Name</p>
           <p className="mt-1">{profile?.display_name ?? "Not set"}</p>
         </div>
         <div>
-          <p className="font-mono text-xs tracking-utility uppercase">Email</p>
+          <p className={UTILITY_TEXT}>Email</p>
           <p className="mt-1">{user.email}</p>
         </div>
       </Card>

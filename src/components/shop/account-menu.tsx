@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui";
+import { Popover, PopoverContent, PopoverTrigger, UTILITY_TEXT } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { PersonIcon } from "./person-icon";
@@ -12,8 +12,7 @@ export type AccountMenuProps = {
   signOutAction: () => void | Promise<void>;
 };
 
-const ITEM =
-  "flex min-h-11 items-center border-t-2 border-ink px-4 font-mono text-xs tracking-utility uppercase";
+const ITEM = `flex min-h-11 items-center border-t-2 border-ink px-4 ${UTILITY_TEXT}`;
 
 /**
  * The signed in account links, behind one icon.

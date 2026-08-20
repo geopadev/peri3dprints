@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { UTILITY_TEXT } from "@/components/ui/type";
 
 /**
  * No flame tone on purpose: CLAUDE.md section 3 gives flame to the primary
@@ -22,7 +23,7 @@ export function Tag({ tone = "neutral", className, ...props }: TagProps) {
     <span
       className={cn(
         "inline-flex items-center rounded-pill border-2 border-ink px-3 py-1",
-        "font-mono text-xs tracking-utility uppercase",
+        UTILITY_TEXT,
         TONE[tone],
         className,
       )}

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { Button, Input } from "@/components/ui";
+import { Button, Input, UTILITY_TEXT } from "@/components/ui";
 import { createClient } from "@/lib/supabase/browser";
 import { PRODUCT_IMAGES_BUCKET, productImageUrl } from "@/lib/product-image-url";
 import type { ProductImageInput } from "@/lib/validation/product";
@@ -144,7 +144,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
       {pending.length > 0 && (
         <ul className="flex flex-col gap-2">
           {pending.map((item) => (
-            <li key={item.id} className="font-mono text-xs tracking-utility uppercase">
+            <li key={item.id} className={UTILITY_TEXT}>
               {item.name}: {item.progress === "resizing" ? "resizing" : "uploading"}
             </li>
           ))}
@@ -169,9 +169,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
 
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-xs tracking-utility uppercase">
-                  {index === 0 ? "Cover" : `Photo ${index + 1}`}
-                </span>
+                <span className={UTILITY_TEXT}>{index === 0 ? "Cover" : `Photo ${index + 1}`}</span>
                 <div className="flex gap-1">
                   <Button
                     type="button"

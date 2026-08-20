@@ -3,7 +3,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import Link from "next/link";
 import { useState } from "react";
-import { Dialog, DialogClose, DialogTrigger } from "@/components/ui";
+import { Dialog, DialogClose, DialogTrigger, UTILITY_TEXT } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 
@@ -11,8 +11,7 @@ export type SiteMenuProps = {
   categories: { slug: string; name: string }[];
 };
 
-const LINK =
-  "flex min-h-12 items-center border-b-2 border-ink px-5 font-mono text-xs tracking-utility uppercase";
+const LINK = `flex min-h-12 items-center border-b-2 border-ink px-5 ${UTILITY_TEXT}`;
 
 const SECTION = "px-5 pt-5 pb-2 font-mono text-xs tracking-utility text-ink-soft uppercase";
 

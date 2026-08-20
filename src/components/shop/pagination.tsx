@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
+import { UTILITY_TEXT } from "@/components/ui/type";
 
 export type PaginationProps = {
   page: number;
@@ -17,7 +18,7 @@ export function Pagination({ page, pageCount, hrefForPage }: PaginationProps) {
       <PageLink href={hrefForPage(page - 1)} disabled={page <= 1} aria-label="Previous page">
         Previous
       </PageLink>
-      <span className="font-mono text-xs tracking-utility uppercase">
+      <span className={UTILITY_TEXT}>
         Page {page} of {pageCount}
       </span>
       <PageLink href={hrefForPage(page + 1)} disabled={page >= pageCount} aria-label="Next page">
@@ -48,7 +49,7 @@ function PageLink({
     <Link
       href={href}
       className={cn(
-        "inline-flex min-h-11 items-center rounded-pill border-2 border-ink px-4 font-mono text-xs tracking-utility uppercase",
+        `inline-flex min-h-11 items-center rounded-pill border-2 border-ink px-4 ${UTILITY_TEXT}`,
         FOCUS_RING,
       )}
       {...props}

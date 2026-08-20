@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, Field, Input } from "@/components/ui";
+import { Button, Card, Field, Input, UTILITY_TEXT } from "@/components/ui";
 
 const WIDGET_SRC = "https://widget-cdn.boxnow.cy/map-widget/client/v1.js";
 const WIDGET_ELEMENT_ID = "boxnow-map-widget";
@@ -86,7 +86,7 @@ export function LockerPicker({ value, onChange }: LockerPickerProps) {
     return (
       <Card className="flex flex-col gap-3">
         <div>
-          <p className="font-mono text-xs tracking-utility uppercase">Your locker</p>
+          <p className={UTILITY_TEXT}>Your locker</p>
           <p className="mt-1 font-semibold">{value.addressLine1 ?? value.lockerId}</p>
           {value.postalCode && <p className="text-sm">{value.postalCode}</p>}
         </div>

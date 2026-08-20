@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, Field, Input, Select, SpecStrip, Textarea } from "@/components/ui";
+import {
+  Button,
+  Card,
+  Field,
+  Input,
+  Select,
+  SpecStrip,
+  Textarea,
+  UTILITY_TEXT,
+} from "@/components/ui";
 import { ImageUploader } from "./image-uploader";
 import { VariantsEditor } from "./variants-editor";
 import {
@@ -297,7 +306,7 @@ export function ProductForm({ initial, categories, onSave }: ProductFormProps) {
         </div>
 
         <Card>
-          <p className="mb-2 font-mono text-xs tracking-utility uppercase">How it will read</p>
+          <p className={`mb-2 ${UTILITY_TEXT}`}>How it will read</p>
           <SpecStrip
             material={values.material || undefined}
             dimensionsMm={
@@ -429,7 +438,7 @@ export function ProductForm({ initial, categories, onSave }: ProductFormProps) {
             Put on the shelf
           </Button>
         </div>
-        <p className="font-mono text-xs tracking-utility uppercase" aria-live="polite">
+        <p className={UTILITY_TEXT} aria-live="polite">
           {pending ? "Saving" : savedAt ? `Saved ${timeLabel(savedAt)}` : "Not saved yet"}
         </p>
       </div>

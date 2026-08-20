@@ -57,3 +57,5 @@ export {
   ToastViewport,
 } from "./toast";
 export type { ToastProps, ToastTone } from "./toast";
+
+export { UTILITY_TEXT } from "./type";

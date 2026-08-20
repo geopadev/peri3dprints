@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
-import { Button, Card, EmptyState, Money, Skeleton, SpecStrip, Tag } from "@/components/ui";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Money,
+  Skeleton,
+  SpecStrip,
+  Tag,
+  UTILITY_TEXT,
+} from "@/components/ui";
 import { DialogDemo, FieldDemos, ToastDemo } from "./interactive-demos";
 
 export const metadata: Metadata = {
@@ -80,7 +89,7 @@ export default function StyleguidePage() {
           {SWATCHES.map((s) => (
             <li key={s.name} className="flex flex-col gap-2">
               <div className={`h-20 rounded-card border-2 border-ink ${s.className}`} />
-              <div className="font-mono text-xs tracking-utility uppercase">
+              <div className={UTILITY_TEXT}>
                 {s.name}
                 <br />
                 {s.hex}
@@ -117,7 +126,7 @@ export default function StyleguidePage() {
         <div className="flex flex-col gap-6">
           {(["primary", "secondary", "ghost", "danger"] as const).map((variant) => (
             <div key={variant} className="flex flex-col gap-3">
-              <h3 className="font-mono text-xs tracking-utility uppercase">{variant}</h3>
+              <h3 className={UTILITY_TEXT}>{variant}</h3>
               <div className="flex flex-wrap items-center gap-3">
                 <Button variant={variant} size="sm">
                   Small

@@ -1,6 +1,7 @@
 import { AdminNav } from "@/components/admin/admin-nav";
 import { requireOwner } from "@/lib/supabase/require-owner";
 import { signOut } from "@/app/(site)/sign-in/actions";
+import { UTILITY_TEXT } from "@/components/ui/type";
 
 /**
  * Route group, so /admin/not-owner stays outside the guard and cannot redirect
@@ -17,7 +18,7 @@ export default async function AdminShellLayout({ children }: { children: React.R
 
       <footer className="mx-auto w-full max-w-5xl px-5 py-8">
         <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-ink pt-4">
-          <p className="font-mono text-xs tracking-utility uppercase">{user.email}</p>
+          <p className={UTILITY_TEXT}>{user.email}</p>
           <form action={signOut}>
             <button
               type="submit"

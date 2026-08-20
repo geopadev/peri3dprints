@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
+import { UTILITY_TEXT } from "@/components/ui/type";
 
 const LINKS = [
   { href: "/admin", label: "Today" },
@@ -35,7 +36,7 @@ export function AdminNav() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-[56px] items-center justify-center px-2 text-center font-mono text-xs tracking-utility uppercase",
+                  `flex min-h-[56px] items-center justify-center px-2 text-center ${UTILITY_TEXT}`,
                   active ? "bg-ink text-paper" : "text-ink",
                   FOCUS_RING,
                 )}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Button, Card, EmptyState, Money, Tag } from "@/components/ui";
+import { Button, Card, EmptyState, Money, Tag, UTILITY_TEXT } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { productImageUrl } from "@/lib/product-image-url";
 import { ProductFilters } from "./product-filters";
@@ -115,7 +115,7 @@ export default async function AdminProductsPage({
                         className="object-cover"
                       />
                     ) : (
-                      <span className="flex h-full items-center justify-center font-mono text-xs tracking-utility uppercase">
+                      <span className={`flex h-full items-center justify-center ${UTILITY_TEXT}`}>
                         No photo
                       </span>
                     )}
@@ -126,9 +126,7 @@ export default async function AdminProductsPage({
                     <p className="mt-1">
                       <Money cents={product.price_cents} />
                       {!product.made_to_order && product.stock_qty !== null && (
-                        <span className="ml-3 font-mono text-xs tracking-utility uppercase">
-                          {product.stock_qty} left
-                        </span>
+                        <span className={`ml-3 ${UTILITY_TEXT}`}>{product.stock_qty} left</span>
                       )}
                     </p>
                   </div>
