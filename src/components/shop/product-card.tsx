@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Money, SpecStrip } from "@/components/ui";
+import { Money, SpecStrip, Tag } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { productImageUrl } from "@/lib/product-image-url";
@@ -21,7 +21,22 @@ export type ProductCardProps = {
  * this card appears dozens of times on one screen and has to stay quiet so
  * the spec strip is the thing people notice.
  */
+
+/**
+ * One badge, chosen by priority, never two. A card that shouts twice shouts
+ * about nothing, and the spec strip has to stay the loudest thing here.
+ */
+function badgeFor(product: ProductCardData): { tone: "sale" | "stock"; label: string } | null {
+  if (product.compareAtCents !== null) return { tone: "sale", label: "Sale" };
+  if (!product.madeToOrder && (product.stockQty ?? 0) > 0) {
+    return { tone: "stock", label: "In stock" };
+  }
+  return null;
+}
+
 export function ProductCard({ product, fadeDelayMs, tall, className }: ProductCardProps) {
+  const badge = badgeFor(product);
+
   return (
     <Link
       href={`/product/${product.slug}`}
@@ -43,12 +58,24 @@ export function ProductCard({ product, fadeDelayMs, tall, className }: ProductCa
             src={productImageUrl(product.cover.storagePath, 480)}
             alt={product.cover.altText}
             fill
-            sizes="(min-width: 1024px) 25vw, 50vw"
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             className="object-cover"
           />
         ) : (
-          <span className="flex h-full items-center justify-center font-mono text-xs tracking-utility text-ink-soft uppercase">
+          <span className="flex h-full items-center justify-center font-mono text-xs tracking-utility text-ink uppercase">
             No photo
+          </span>
+        )}
+
+        {/* Positioned with top and left, never a transform: the reduced motion
+            block sets transform: none globally, so a translated badge would
+            jump out of the corner for exactly the people least able to cope
+            with it. The tilt is a transform and is allowed to be lost. */}
+        {badge && (
+          <span className="absolute top-2 left-2 rotate-[-3deg]">
+            <Tag tone={badge.tone} size="sm">
+              {badge.label}
+            </Tag>
           </span>
         )}
       </div>
