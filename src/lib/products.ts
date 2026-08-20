@@ -227,7 +227,12 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     shortDescription: data.short_description,
     description: data.description,
     priceCents: data.price_cents,
-    compareAtCents: data.compare_at_cents,
+    // Only a sale when it is actually above the price, so a stale higher
+    // value left on a product cannot fake one.
+    compareAtCents:
+      data.compare_at_cents && data.compare_at_cents > data.price_cents
+        ? data.compare_at_cents
+        : null,
     madeToOrder: data.made_to_order ?? true,
     leadTimeDays: data.lead_time_days,
     stockQty: data.stock_qty,

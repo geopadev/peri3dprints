@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Button, Money } from "@/components/ui";
+import { Button, Money, Tag } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { useCart } from "@/hooks/use-cart";
@@ -11,6 +11,8 @@ import type { ProductVariantData } from "@/lib/products";
 export type ProductPurchasePanelProps = {
   productId: string;
   priceCents: number;
+  /** Only ever set when it is above priceCents. */
+  compareAtCents: number | null;
   variants: ProductVariantData[];
   madeToOrder: boolean;
   leadTimeDays: number | null;
@@ -35,6 +37,7 @@ function stockLine(
 export function ProductPurchasePanel({
   productId,
   priceCents,
+  compareAtCents,
   variants,
   madeToOrder,
   leadTimeDays,
@@ -67,7 +70,17 @@ export function ProductPurchasePanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <Money cents={displayPriceCents} className="text-2xl" />
+      {/* The one page where a sale actually matters, so this is where magenta
+          earns its keep. One accent, next to the number it is about. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Money cents={displayPriceCents} className="text-2xl" />
+        {compareAtCents !== null && (
+          <>
+            <Money cents={compareAtCents} className="text-base line-through" />
+            <Tag tone="sale">Sale</Tag>
+          </>
+        )}
+      </div>
 
       {variants.length > 0 && (
         <div role="radiogroup" aria-label="Colour" className="flex flex-wrap gap-2">
@@ -103,7 +116,16 @@ export function ProductPurchasePanel({
         </div>
       )}
 
-      <p>{stockLine(madeToOrder, leadTimeDays, stockQty)}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        {madeToOrder ? (
+          <Tag tone="made">Made to order</Tag>
+        ) : stockQty === 0 ? (
+          <Tag>Out of stock</Tag>
+        ) : (
+          <Tag tone="stock">In stock</Tag>
+        )}
+        <p>{stockLine(madeToOrder, leadTimeDays, stockQty)}</p>
+      </div>
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-3">

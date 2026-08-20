@@ -75,6 +75,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <ProductPurchasePanel
             productId={product.id}
             priceCents={product.priceCents}
+            compareAtCents={product.compareAtCents}
             variants={product.variants}
             madeToOrder={product.madeToOrder}
             leadTimeDays={product.leadTimeDays}
