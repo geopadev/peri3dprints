@@ -1,3 +1,4 @@
+import { SectionBand } from "@/components/shop/section-band";
 import { CategoryChips } from "@/components/shop/category-chips";
 import { Pagination } from "@/components/shop/pagination";
 import { ProductGrid } from "@/components/shop/product-grid";
@@ -52,11 +53,11 @@ export async function ShopListing({
       {/* A wash rather than a fill. This page is a working tool and the grid
           is the point, so the controls get a frame, not a slab shouting over
           two dozen products. */}
-      <div className="-mx-5 -mt-8 flex flex-col gap-4 border-b-2 border-ink bg-info-wash px-5 pt-8 pb-5">
+      <SectionBand tone="plain" className="-mx-5 -mt-8 flex flex-col gap-4 border-t-0 pt-8 pb-5">
         <h1 className="text-2xl">{query ? `Results for "${query}"` : "Shop"}</h1>
         <CategoryChips activeSlug={categorySlug} />
         <ShopFilterBar />
-      </div>
+      </SectionBand>
 
       <ProductGrid
         products={products}
