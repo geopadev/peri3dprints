@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/admin", label: "Today" },
   { href: "/admin/products", label: "Prints" },
   { href: "/admin/categories", label: "Categories" },
+  { href: "/admin/messages", label: "Messages" },
   { href: "/admin/people", label: "People" },
   { href: "/admin/settings", label: "Settings" },
 ] as const;
@@ -26,18 +27,22 @@ export function AdminNav() {
       aria-label="Admin"
       className="sticky bottom-0 z-30 order-last border-t-2 border-ink bg-surface sm:top-0 sm:bottom-auto sm:order-first sm:border-t-0 sm:border-b-2"
     >
-      <ul className="mx-auto flex max-w-5xl">
+      {/* Scrolls sideways rather than squeezing. Six equal flex items ran
+          "Settings" off the edge of a 390px phone, which silently loses him a
+          whole section on exactly the device this nav is built for. Items keep
+          their own width and the row scrolls if it has to. */}
+      <ul className="mx-auto flex max-w-5xl overflow-x-auto">
         {LINKS.map((link) => {
           const active =
             link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
 
           return (
-            <li key={link.href} className="flex-1">
+            <li key={link.href} className="flex-1 shrink-0">
               <Link
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  `flex min-h-[56px] items-center justify-center px-2 text-center ${UTILITY_TEXT}`,
+                  `flex min-h-[56px] items-center justify-center px-3 text-center whitespace-nowrap ${UTILITY_TEXT}`,
                   active ? "bg-ink text-paper" : "text-ink",
                   FOCUS_RING,
                 )}
