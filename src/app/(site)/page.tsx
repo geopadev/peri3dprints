@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { AnnouncementStrip } from "@/components/shop/announcement-strip";
-import { CategoryChips } from "@/components/shop/category-chips";
+import { CategoryCarousel } from "@/components/shop/category-carousel";
 import { CustomRequestBand } from "@/components/shop/custom-request-band";
 import { ProductGrid } from "@/components/shop/product-grid";
 import { getHeroProducts } from "@/lib/products";
@@ -21,18 +21,11 @@ export default async function HomePage() {
     <main>
       <AnnouncementStrip />
 
-      {/* Shown on a phone too. The drawer does list these, but it is behind a
-          button, and a visible row of coloured chips is the difference between
-          a shop and a brochure for someone who arrived on a phone. */}
-      <div className="px-5 pt-5">
-        <CategoryChips />
-      </div>
+      <CategoryCarousel />
 
-      {/* The hero is the stock itself. The shop name is a cell of the same
-          grid rather than a box floated over it: "beside" from CLAUDE.md
-          section 5, which is the half of "over or beside" that does not cover
-          up the products. It spans the full width on a phone and sits in the
-          corner of the grid from small screens up. */}
+      {/* The stock starts immediately under the masthead, per section 5: the
+          most characteristic thing about a market stall is the table covered
+          in things. */}
       <div className="px-5 py-6">
         <ProductGrid
           products={products}
@@ -46,21 +39,6 @@ export default async function HomePage() {
             <Link href="/messages">
               <Button>Message me</Button>
             </Link>
-          }
-          lead={
-            <Card
-              accent="action"
-              padded={false}
-              /* self-start so it sizes to its own content. The cards in its
-                 row stretch to match each other, and without this the masthead
-                 stretched with them and left a tall empty orange field. */
-              className="col-span-2 self-start px-4 py-6 sm:py-8"
-            >
-              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl">Peri 3D Prints</h1>
-              <p className="mt-2">
-                Printed to order in Cyprus. Message me if you want it different.
-              </p>
-            </Card>
           }
         />
       </div>
