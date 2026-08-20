@@ -51,7 +51,10 @@ export default async function HomePage() {
             <Card
               accent="action"
               padded={false}
-              className="col-span-2 flex flex-col justify-center px-4 py-5"
+              /* self-start so it sizes to its own content. The cards in its
+                 row stretch to match each other, and without this the masthead
+                 stretched with them and left a tall empty orange field. */
+              className="col-span-2 self-start px-4 py-6 sm:py-8"
             >
               <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl">Peri 3D Prints</h1>
               <p className="mt-2">
