@@ -153,21 +153,26 @@ export function ProductPurchasePanel({
           </p>
         )}
 
+        {/* The trailing word has to live inside each branch. Shared, it read
+            "Message me directly for now. instead." whenever no WhatsApp number
+            was set. */}
         <p className="text-sm">
           Chat is not open yet.{" "}
           {whatsappHref ? (
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold underline"
-            >
-              Message me on WhatsApp
-            </a>
+            <>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold underline"
+              >
+                Message me on WhatsApp
+              </a>{" "}
+              instead.
+            </>
           ) : (
             "Message me directly for now."
-          )}{" "}
-          instead.
+          )}
         </p>
       </div>
     </div>
