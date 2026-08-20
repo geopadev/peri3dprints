@@ -113,9 +113,11 @@ no animated blobs, no marquee.
 The carousel is the one thing that moves on its own, so it carries conditions. It must stop while
 someone is hovering it or tabbing through it, it must not start at all under
 `prefers-reduced-motion`, arrows and swipe must always work so nobody waits on the timer, and it
-must move by scrolling rather than by a transform, since the reduced-motion block sets
-`transform: none` and a translated track would collapse into a pile. Nothing else on the site
-animates by itself: this is a carousel, not a licence for a marquee.
+must never depend on a transform for position, since the reduced-motion block sets
+`transform: none` and a scaled or translated card would collapse into the corner. Animate `left`,
+`width`, `height` and `opacity` instead: those still resolve correctly once the transition is
+switched off, so the layout is right either way and only the movement is lost. Nothing else on the
+site animates by itself: this is a carousel, not a licence for a marquee.
 
 ## 4. Copy rules
 
