@@ -9,6 +9,10 @@ export type ProductGridProps = {
    * home page to sit the shop name among the stock rather than on top of it. */
   lead?: React.ReactNode;
   emptyTitle?: string;
+  /** The empty state has to offer something to press, per section 4. The grid
+   *  does not assume what: the home page and a filtered shop want different
+   *  things, and two identical buttons a few pixels apart is worse than one. */
+  emptyAction?: React.ReactNode;
   emptyDescription?: string;
   className?: string;
 };
@@ -23,6 +27,7 @@ function isTall(index: number): boolean {
 export function ProductGrid({
   products,
   lead,
+  emptyAction,
   emptyTitle = "Nothing here yet",
   emptyDescription = "Message me and I'll print what you want.",
   className,
@@ -31,7 +36,12 @@ export function ProductGrid({
     return (
       <div className="flex flex-col gap-6">
         {lead}
-        <EmptyState title={emptyTitle} description={emptyDescription} />
+        <EmptyState
+          title={emptyTitle}
+          description={emptyDescription}
+          tone="invite"
+          action={emptyAction}
+        />
       </div>
     );
   }
