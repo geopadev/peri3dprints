@@ -44,6 +44,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["convo_kind"]
           last_message_at: string | null
+          order_id: string | null
           product_id: string | null
           status: Database["public"]["Enums"]["convo_status"]
           subject: string | null
@@ -58,6 +59,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["convo_kind"]
           last_message_at?: string | null
+          order_id?: string | null
           product_id?: string | null
           status?: Database["public"]["Enums"]["convo_status"]
           subject?: string | null
@@ -72,6 +74,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["convo_kind"]
           last_message_at?: string | null
+          order_id?: string | null
           product_id?: string | null
           status?: Database["public"]["Enums"]["convo_status"]
           subject?: string | null
@@ -79,6 +82,13 @@ export type Database = {
           unread_for_owner?: boolean | null
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_product_id_fkey"
             columns: ["product_id"]
@@ -551,6 +561,7 @@ export type Database = {
           bank_bic: string | null
           bank_iban: string | null
           boxnow_origin_location_id: string | null
+          canned_replies: Json
           id: number
           shop_open: boolean | null
           updated_at: string | null
@@ -562,6 +573,7 @@ export type Database = {
           bank_bic?: string | null
           bank_iban?: string | null
           boxnow_origin_location_id?: string | null
+          canned_replies?: Json
           id?: number
           shop_open?: boolean | null
           updated_at?: string | null
@@ -573,6 +585,7 @@ export type Database = {
           bank_bic?: string | null
           bank_iban?: string | null
           boxnow_origin_location_id?: string | null
+          canned_replies?: Json
           id?: number
           shop_open?: boolean | null
           updated_at?: string | null
@@ -663,7 +676,7 @@ export type Database = {
     }
     Enums: {
       carrier: "boxnow" | "acs" | "cypost" | "pickup"
-      convo_kind: "general" | "custom_request"
+      convo_kind: "general" | "custom_request" | "product" | "order"
       convo_status: "open" | "awaiting_owner" | "awaiting_buyer" | "closed"
       order_status:
         | "pending"
@@ -808,7 +821,7 @@ export const Constants = {
   public: {
     Enums: {
       carrier: ["boxnow", "acs", "cypost", "pickup"],
-      convo_kind: ["general", "custom_request"],
+      convo_kind: ["general", "custom_request", "product", "order"],
       convo_status: ["open", "awaiting_owner", "awaiting_buyer", "closed"],
       order_status: [
         "pending",
