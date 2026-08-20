@@ -1,8 +1,10 @@
 export { Button } from "./button";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./button";
 
+export { FOCUS_RING_ON_ACCENT } from "./focus-ring";
+
 export { Card } from "./card";
-export type { CardProps } from "./card";
+export type { CardAccent, CardProps } from "./card";
 
 export {
   Dialog,
@@ -16,7 +18,7 @@ export {
 export type { DialogContentProps } from "./dialog";
 
 export { EmptyState } from "./empty-state";
-export type { EmptyStateProps } from "./empty-state";
+export type { EmptyStateProps, EmptyStateTone } from "./empty-state";
 
 export { Field } from "./field";
 export type { FieldControlProps, FieldProps } from "./field";
@@ -45,7 +47,7 @@ export { SpecStrip } from "./spec-strip";
 export type { SpecStripProps } from "./spec-strip";
 
 export { Tag } from "./tag";
-export type { TagProps, TagTone } from "./tag";
+export type { TagProps, TagSize, TagTone } from "./tag";
 
 export { Textarea } from "./textarea";
 export type { TextareaProps } from "./textarea";

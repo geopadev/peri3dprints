@@ -9,3 +9,14 @@
  */
 export const FOCUS_RING =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan focus-visible:outline-solid";
+
+/**
+ * For a control on a flame, cyan or magenta band, where the cyan ring either
+ * vanishes or reads as decoration. Paper clears 3:1 against flame and magenta.
+ *
+ * Deliberately not used on lime: paper on lime is 1.46:1. The rule is that
+ * focusable controls never sit on a lime band, and the one lime band in the
+ * shop puts an onAccent (ink) button on it, whose own fill does the separating.
+ */
+export const FOCUS_RING_ON_ACCENT =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper focus-visible:outline-solid";
