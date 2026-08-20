@@ -17,13 +17,6 @@ export type ProductGridProps = {
   className?: string;
 };
 
-/** Every ~5th card runs taller, so the grid reads as a table of objects
- * rather than a spreadsheet. Rows still align at the top: shorter cards in a
- * row simply leave quiet space below them instead of stretching to match. */
-function isTall(index: number): boolean {
-  return index % 5 === 2;
-}
-
 export function ProductGrid({
   products,
   lead,
@@ -49,18 +42,16 @@ export function ProductGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-2 items-start gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4",
+        // items-stretch, not items-start: with every image well the same
+        // shape, cards in a row should end level too. A long title wrapping
+        // to two lines otherwise leaves its neighbour short.
+        "grid grid-cols-2 items-stretch gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4",
         className,
       )}
     >
       {lead}
       {products.map((product, index) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          tall={isTall(index)}
-          fadeDelayMs={(index % 12) * 40}
-        />
+        <ProductCard key={product.id} product={product} fadeDelayMs={(index % 12) * 40} />
       ))}
     </div>
   );

@@ -10,9 +10,6 @@ export type ProductCardProps = {
   product: ProductCardData;
   /** Staggered fade-up delay in ms, per CLAUDE.md section 3 motion rules. */
   fadeDelayMs?: number;
-  /** Occasional taller image, so the grid reads as a table of objects rather
-   * than a spreadsheet. See ProductGrid for the pattern that sets this. */
-  tall?: boolean;
   className?: string;
 };
 
@@ -34,7 +31,7 @@ function badgeFor(product: ProductCardData): { tone: "sale" | "stock"; label: st
   return null;
 }
 
-export function ProductCard({ product, fadeDelayMs, tall, className }: ProductCardProps) {
+export function ProductCard({ product, fadeDelayMs, className }: ProductCardProps) {
   const badge = badgeFor(product);
 
   return (
@@ -49,10 +46,10 @@ export function ProductCard({ product, fadeDelayMs, tall, className }: ProductCa
         className,
       )}
     >
-      {/* Square on a phone, where two ragged columns read as a mistake rather
-          than as a market table. The height variation only starts once there
-          is enough width for it to look deliberate. */}
-      <div className={cn("relative aspect-square w-full bg-paper", tall && "sm:aspect-[3/4]")}>
+      {/* Square at every width. Every image well is the same shape, so the
+          grid lines up in rows and the eye compares the prints rather than the
+          boxes they sit in. */}
+      <div className="relative aspect-square w-full bg-paper">
         {product.cover ? (
           <Image
             src={productImageUrl(product.cover.storagePath, 480)}
