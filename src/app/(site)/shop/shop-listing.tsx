@@ -49,7 +49,10 @@ export async function ShopListing({
 
   return (
     <main className="flex flex-col gap-6 px-5 py-8">
-      <div className="flex flex-col gap-4">
+      {/* A wash rather than a fill. This page is a working tool and the grid
+          is the point, so the controls get a frame, not a slab shouting over
+          two dozen products. */}
+      <div className="-mx-5 -mt-8 flex flex-col gap-4 border-b-2 border-ink bg-info-wash px-5 pt-8 pb-5">
         <h1 className="text-2xl">{query ? `Results for "${query}"` : "Shop"}</h1>
         <CategoryChips activeSlug={categorySlug} />
         <ShopFilterBar />
