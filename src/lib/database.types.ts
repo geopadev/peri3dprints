@@ -554,6 +554,33 @@ export type Database = {
         }
         Relationships: []
       }
+      role_changes: {
+        Row: {
+          actor_id: string | null
+          created_at: string | null
+          from_role: string | null
+          id: string
+          subject_id: string
+          to_role: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string | null
+          from_role?: string | null
+          id?: string
+          subject_id: string
+          to_role: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string | null
+          from_role?: string | null
+          id?: string
+          subject_id?: string
+          to_role?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           announcement: string | null
@@ -673,6 +700,10 @@ export type Database = {
       }
       generate_order_number: { Args: never; Returns: string }
       is_owner: { Args: never; Returns: boolean }
+      set_user_role: {
+        Args: { p_role: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       carrier: "boxnow" | "acs" | "cypost" | "pickup"
