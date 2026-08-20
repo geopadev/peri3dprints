@@ -25,7 +25,7 @@ export function Select({
         className={cn(
           CONTROL_BASE,
           "h-12 appearance-none pr-11",
-          invalid ? "border-magenta" : "border-ink",
+          invalid ? "border-ink bg-alert-tint" : "border-ink bg-surface",
           FOCUS_RING,
           className,
         )}

@@ -14,7 +14,7 @@ export function Textarea({ invalid = false, rows = 4, className, ...props }: Tex
       className={cn(
         CONTROL_BASE,
         "resize-y py-3",
-        invalid ? "border-magenta" : "border-ink",
+        invalid ? "border-ink bg-alert-tint" : "border-ink bg-surface",
         FOCUS_RING,
         className,
       )}
