@@ -50,7 +50,7 @@ export function ShopFilterBar() {
           type="checkbox"
           checked={inStockOnly}
           onChange={(event) => onInStockChange(event.target.checked)}
-          className={cn("h-5 w-5 accent-flame", FOCUS_RING)}
+          className={cn("h-5 w-5 accent-ink", FOCUS_RING)}
         />
         <span>In stock only</span>
       </label>
