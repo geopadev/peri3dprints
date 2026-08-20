@@ -2,115 +2,61 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { UTILITY_TEXT } from "@/components/ui";
-import { FOCUS_RING } from "@/components/ui/focus-ring";
+import { Button, UTILITY_TEXT } from "@/components/ui";
+import { FOCUS_RING, FOCUS_RING_ON_ACCENT } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
+import { nextIndex } from "./carousel-index";
 
 export type CarouselCategory = { slug: string; name: string };
 
-/*
-  Four tones, all saturated. A wash was the obvious fourth, but beside three
-  solid fills it read as a disabled panel rather than a category, so ink takes
-  the slot: a real colour rather than a faded one.
-*/
-const PANEL_TONES = [
-  "bg-info text-ink",
-  "bg-highlight text-ink",
-  "bg-offer text-ink",
-  "bg-ink text-paper",
-] as const;
-
 const ROTATE_MS = 5000;
 
+/** Below this many pixels a touch is a tap or a scroll, not a swipe. */
+const SWIPE_THRESHOLD = 40;
+
 /**
- * The category carousel. It advances on its own, and CLAUDE.md section 3 names
- * it as the fourth place motion is allowed, with the conditions it has to meet:
+ * The masthead. One card whose contents change, rather than a row of cards:
+ * the shop name sits on the first face and each category takes a turn after
+ * it.
  *
- *   - it stops on hover and on keyboard focus, so it never moves under someone
- *     who is reading or tabbing through it
+ * CLAUDE.md section 3 names this as the fourth place motion is allowed and
+ * lists the conditions it carries:
+ *
+ *   - it stops while someone hovers it or tabs through it
  *   - it does not start at all under prefers-reduced-motion
- *   - the arrows and a swipe always work, so nobody has to wait for the timer
+ *   - the arrows and a swipe always work, so nobody waits on the timer
  *
- * Movement is `scrollTo`, not a transform. The reduced motion block sets
- * transform: none globally, so a translated track would collapse into a pile
- * for exactly the people least able to cope with it.
+ * Nothing moves by transform. The reduced motion block sets transform: none
+ * globally, so a sliding track would collapse into a pile for exactly the
+ * people least able to cope with it. Faces are swapped, not slid.
  */
 export function CategoryCarouselTrack({ categories }: { categories: CarouselCategory[] }) {
-  const trackRef = useRef<HTMLUListElement>(null);
-  const [paused, setPaused] = useState(false);
+  // Face 0 is the shop itself, then one per category.
+  const faces = categories.length;
   const [index, setIndex] = useState(0);
-
-  const scrollToIndex = useCallback((next: number) => {
-    const track = trackRef.current;
-    if (!track) return;
-    const item = track.children[next] as HTMLElement | undefined;
-    if (!item) return;
-    /*
-      Measured against the track's own scroll position rather than with
-      offsetLeft. offsetLeft is relative to the nearest positioned ancestor,
-      which is not the scroll container once the row bleeds with -mx-5, so
-      subtracting the two mixed coordinate spaces and left the track a
-      few pixels short of a panel instead of a full one.
-    */
-    const left =
-      track.scrollLeft + (item.getBoundingClientRect().left - track.getBoundingClientRect().left);
-    track.scrollTo({ left, behavior: "smooth" });
-  }, []);
+  const [paused, setPaused] = useState(false);
+  const touchStart = useRef<number | null>(null);
 
   const go = useCallback(
     (delta: number) => {
-      setIndex((current) => {
-        const next = (current + delta + categories.length) % categories.length;
-        scrollToIndex(next);
-        return next;
-      });
+      setIndex((current) => nextIndex(current, delta, faces));
     },
-    [categories.length, scrollToIndex],
+    [faces],
   );
 
   useEffect(() => {
-    if (paused || categories.length < 2) return;
-    // Checked here rather than in CSS: this is a timer, not a transition, so a
-    // media query cannot switch it off.
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) return;
+    if (paused || faces < 2) return;
+    // Checked in JavaScript because this is a timer, not a transition, and a
+    // media query cannot switch a timer off.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const timer = window.setInterval(() => go(1), ROTATE_MS);
     return () => window.clearInterval(timer);
-  }, [paused, categories.length, go]);
+  }, [paused, faces, go]);
 
-  // Keep the dots honest when someone swipes instead of using the arrows.
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    let frame = 0;
-    function onScroll() {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const track = trackRef.current;
-        if (!track) return;
-        const items = Array.from(track.children) as HTMLElement[];
-        const trackLeft = track.getBoundingClientRect().left;
-        let nearest = 0;
-        let best = Infinity;
-        items.forEach((item, i) => {
-          const distance = Math.abs(item.getBoundingClientRect().left - trackLeft);
-          if (distance < best) {
-            best = distance;
-            nearest = i;
-          }
-        });
-        setIndex(nearest);
-      });
-    }
-    track.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      track.removeEventListener("scroll", onScroll);
-      window.cancelAnimationFrame(frame);
-    };
-  }, []);
+  if (faces === 0) return null;
 
-  if (categories.length === 0) return null;
+  const category = categories[index];
 
   return (
     <div
@@ -119,45 +65,62 @@ export function CategoryCarouselTrack({ categories }: { categories: CarouselCate
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
+      onTouchStart={(event) => {
+        touchStart.current = event.touches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(event) => {
+        const start = touchStart.current;
+        touchStart.current = null;
+        if (start === null) return;
+        const dx = (event.changedTouches[0]?.clientX ?? start) - start;
+        if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+        go(dx < 0 ? 1 : -1);
+      }}
     >
-      <ul
-        ref={trackRef}
-        className="-mx-5 flex snap-x snap-proximity gap-3 overflow-x-auto px-5 pb-1"
+      <div
+        className={cn(
+          "rounded-card border-2 border-ink bg-action px-4 py-6 text-ink shadow-hard",
+          // Padded at the sides on desktop so the arrows sit in their own
+          // gutters rather than over the words.
+          "sm:px-20 sm:py-8",
+          // Two columns from sm: the fixed half on the left, the half that
+          // changes on the right, so the eye knows where to look.
+          "flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8",
+        )}
       >
-        {categories.map((category, i) => (
-          <li key={category.slug} className="snap-start">
-            <Link
-              href={`/shop/${category.slug}`}
-              className={cn(
-                "flex h-24 w-44 flex-col justify-end rounded-card border-2 border-ink p-3 shadow-hard sm:h-28 sm:w-52",
-                PANEL_TONES[i % PANEL_TONES.length],
-                FOCUS_RING,
-              )}
-            >
-              <span className={cn(UTILITY_TEXT, "leading-tight")}>{category.name}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+        <div className="sm:max-w-md">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl">Peri 3D Prints</h1>
+          <p className="mt-2">Printed to order in Cyprus. Message me if you want it different.</p>
+        </div>
 
-      {categories.length > 1 && (
+        {/* A floor on the height so the card does not resize as names of
+            different lengths take their turn. aria-live so the change is
+            announced rather than the card silently becoming about something
+            else. */}
+        <div
+          className="flex min-h-24 flex-col justify-center sm:min-h-28 sm:items-end sm:text-right"
+          aria-live="polite"
+        >
+          <span className={cn(UTILITY_TEXT, "text-ink")}>Have a look at</span>
+          <Link href={`/shop/${category.slug}`} className="mt-2 inline-block">
+            <Button variant="onAccent">{category.name}</Button>
+          </Link>
+        </div>
+      </div>
+
+      {faces > 1 && (
         <>
-          {/* Desktop only: a phone swipes, and two 44px buttons over a 44px
-              wide panel would cover the thing they scroll. */}
           <Arrow side="left" onClick={() => go(-1)} />
           <Arrow side="right" onClick={() => go(1)} />
 
-          <ul className="mt-3 flex justify-center gap-2 sm:justify-start">
-            {categories.map((category, i) => (
-              <li key={category.slug}>
+          <ul className="mt-3 flex justify-center gap-2">
+            {categories.map((entry, i) => (
+              <li key={entry.slug}>
                 <button
                   type="button"
-                  aria-label={`Show ${category.name}`}
+                  aria-label={`Show ${entry.name}`}
                   aria-current={i === index ? "true" : undefined}
-                  onClick={() => {
-                    setIndex(i);
-                    scrollToIndex(i);
-                  }}
+                  onClick={() => setIndex(i)}
                   className={cn(
                     "h-3 w-3 rounded-pill border-2 border-ink",
                     i === index ? "bg-ink" : "bg-surface",
@@ -178,14 +141,16 @@ function Arrow({ side, onClick }: { side: "left" | "right"; onClick: () => void 
     <button
       type="button"
       onClick={onClick}
-      aria-label={side === "left" ? "Previous categories" : "Next categories"}
+      aria-label={side === "left" ? "Previous category" : "Next category"}
       className={cn(
-        "absolute top-1/2 hidden h-11 w-11 items-center justify-center sm:flex",
-        // -mt rather than a translate: the reduced motion block kills
-        // transforms, and a button that jumps to the corner is worse than none.
-        "-mt-9 rounded-pill border-2 border-ink bg-surface text-ink shadow-hard",
-        side === "left" ? "left-1" : "right-1",
-        FOCUS_RING,
+        // Inside the card, so the control belongs to the thing it changes.
+        // Hidden on a phone, where a swipe does the same job without covering
+        // the words. Positioned with top and a negative margin rather than a
+        // translate, since reduced motion kills transforms.
+        "absolute top-1/2 -mt-14 hidden h-11 w-11 items-center justify-center sm:flex",
+        "rounded-pill border-2 border-ink bg-ink text-paper",
+        side === "left" ? "left-3" : "right-3",
+        FOCUS_RING_ON_ACCENT,
       )}
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
