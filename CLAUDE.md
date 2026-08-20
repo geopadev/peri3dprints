@@ -105,9 +105,17 @@ it quiet so it stands out. Do not add a second competing flourish.
 
 ### Motion
 
-Three places only: card lift on hover (transform, 120ms), button press, and a staggered fade-up on
-the catalogue grid at 40ms intervals on first paint. Respect `prefers-reduced-motion: reduce` by
-disabling all of it. No parallax, no scroll-jacking, no animated blobs, no marquee.
+Four places only: card lift on hover (transform, 120ms), button press, a staggered fade-up on the
+catalogue grid at 40ms intervals on first paint, and the category carousel on the home page.
+Respect `prefers-reduced-motion: reduce` by disabling all of it. No parallax, no scroll-jacking,
+no animated blobs, no marquee.
+
+The carousel is the one thing that moves on its own, so it carries conditions. It must stop while
+someone is hovering it or tabbing through it, it must not start at all under
+`prefers-reduced-motion`, arrows and swipe must always work so nobody waits on the timer, and it
+must move by scrolling rather than by a transform, since the reduced-motion block sets
+`transform: none` and a translated track would collapse into a pile. Nothing else on the site
+animates by itself: this is a carousel, not a licence for a marquee.
 
 ## 4. Copy rules
 
