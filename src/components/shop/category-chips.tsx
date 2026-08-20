@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UTILITY_TEXT } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { getCategories } from "@/lib/products";
@@ -20,9 +21,13 @@ export async function CategoryChips({ activeSlug }: { activeSlug?: string }) {
             All
           </Chip>
         </li>
-        {categories.map((category) => (
+        {categories.map((category, index) => (
           <li key={category.slug}>
-            <Chip href={`/shop/${category.slug}`} active={activeSlug === category.slug}>
+            <Chip
+              href={`/shop/${category.slug}`}
+              active={activeSlug === category.slug}
+              tone={CHIP_TONES[index % CHIP_TONES.length]}
+            >
               {category.name}
             </Chip>
           </li>
@@ -32,13 +37,25 @@ export async function CategoryChips({ activeSlug }: { activeSlug?: string }) {
   );
 }
 
+/*
+  Cycled by position, not by category, because categories are edited by the
+  owner and a mapping keyed on a name would break the first time one is
+  renamed. Several accents sit next to each other here, which the one accent
+  per section rule otherwise forbids: it works because the chips are small,
+  pill shaped and ink bordered, so a row of them reads as a rack of spools
+  rather than as colours competing for the same job.
+*/
+const CHIP_TONES = ["bg-info", "bg-highlight", "bg-offer"] as const;
+
 function Chip({
   href,
   active,
+  tone,
   children,
 }: {
   href: string;
   active: boolean;
+  tone?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -47,8 +64,9 @@ function Chip({
       aria-current={active ? "page" : undefined}
       className={cn(
         "inline-flex min-h-11 items-center rounded-pill border-2 border-ink px-4",
-        "font-mono text-xs tracking-utility whitespace-nowrap uppercase",
-        active ? "bg-ink text-paper" : "bg-surface text-ink",
+        UTILITY_TEXT,
+        "whitespace-nowrap",
+        active ? "bg-ink text-paper" : cn(tone ?? "bg-surface", "text-ink"),
         FOCUS_RING,
       )}
     >
