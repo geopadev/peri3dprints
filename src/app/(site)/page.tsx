@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Button, Card } from "@/components/ui";
 import { AnnouncementStrip } from "@/components/shop/announcement-strip";
 import { CategoryChips } from "@/components/shop/category-chips";
 import { CustomRequestBand } from "@/components/shop/custom-request-band";
@@ -19,9 +21,10 @@ export default async function HomePage() {
     <main>
       <AnnouncementStrip />
 
-      {/* Hidden on a phone, where the drawer already lists every category and
-          this would just be a second copy of the same links. */}
-      <div className="hidden px-5 pt-5 sm:block">
+      {/* Shown on a phone too. The drawer does list these, but it is behind a
+          button, and a visible row of coloured chips is the difference between
+          a shop and a brochure for someone who arrived on a phone. */}
+      <div className="px-5 pt-5">
         <CategoryChips />
       </div>
 
@@ -35,13 +38,26 @@ export default async function HomePage() {
           products={products}
           emptyTitle="Nothing on the shelf yet"
           emptyDescription="Message me and I'll print what you want."
+          /* Not a custom print button: the band underneath already offers
+             exactly that, and the same button twice on one screen reads as a
+             mistake. The shelf being empty is a reason to talk, not to fill in
+             a form. */
+          emptyAction={
+            <Link href="/messages">
+              <Button>Message me</Button>
+            </Link>
+          }
           lead={
-            <div className="col-span-2 flex flex-col justify-center rounded-card border-2 border-ink bg-surface px-4 py-5 shadow-hard">
+            <Card
+              accent="action"
+              padded={false}
+              className="col-span-2 flex flex-col justify-center px-4 py-5"
+            >
               <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl">Peri 3D Prints</h1>
               <p className="mt-2">
                 Printed to order in Cyprus. Message me if you want it different.
               </p>
-            </div>
+            </Card>
           }
         />
       </div>
