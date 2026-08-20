@@ -26,6 +26,9 @@ export { FOCUS_RING } from "./focus-ring";
 export { Input } from "./input";
 export type { InputProps } from "./input";
 
+export { Notice } from "./notice";
+export type { NoticeProps, NoticeTone } from "./notice";
+
 export { formatCents, Money } from "./money";
 export type { MoneyProps } from "./money";
 
