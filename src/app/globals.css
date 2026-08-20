@@ -11,6 +11,28 @@
   --color-lime: #b8e62e;
   --color-magenta: #ff3d8b;
 
+  /*
+    Semantic roles. Components reference these, never the raw hue, so a role can
+    be re-pointed in one place. Every one is a BACKGROUND with ink text on top:
+    section 8 measured white against all four accents and it fails every time.
+  */
+  --color-action: var(--color-flame); /* primary button, and the one loud band per section */
+  --color-highlight: var(--color-lime); /* in stock, done, positive */
+  --color-info: var(--color-cyan); /* lead time, neutral facts */
+  --color-offer: var(--color-magenta); /* sale and price drops only */
+
+  /*
+    Washes, not fills. A band can carry colour without becoming a solid slab,
+    which is what keeps four coloured sections from shouting over each other.
+  */
+  --color-info-wash: color-mix(in oklab, var(--color-cyan) 12%, var(--color-paper));
+  --color-highlight-wash: color-mix(in oklab, var(--color-lime) 14%, var(--color-paper));
+  --color-action-wash: color-mix(in oklab, var(--color-flame) 10%, var(--color-paper));
+
+  /* Invalid fields. Ink border on a faint pink field, because ink on ink is no
+     signal at all, and magenta now belongs to sale. */
+  --color-alert-tint: color-mix(in oklab, var(--color-magenta) 10%, var(--color-surface));
+
   /* next/font sets the --font-*-src variables on <html> in layout.tsx. */
   --font-display: var(--font-bricolage-src), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-hanken-src), ui-sans-serif, system-ui, sans-serif;
@@ -44,6 +66,9 @@
   /* Hard offsets, never blurs. */
   --shadow-hard: 4px 4px 0 var(--color-ink);
   --shadow-hard-sm: 2px 2px 0 var(--color-ink);
+  /* For an ink button on a coloured band, where an ink shadow would vanish. */
+  --shadow-hard-inverse: 4px 4px 0 var(--color-paper);
+  --shadow-hard-inverse-sm: 2px 2px 0 var(--color-paper);
 
   --ease-press: cubic-bezier(0.2, 0, 0, 1);
 
