@@ -10,6 +10,8 @@ import { cn } from "@/lib/cn";
  * Honest information, not decoration. Keep whatever sits around it quiet.
  */
 export type SpecStripProps = {
+  /** False on a card, where the strip must stay one line. */
+  wrap?: boolean;
   material?: string;
   /** x, y, z in millimetres. */
   dimensionsMm?: readonly [number, number, number];
@@ -49,6 +51,7 @@ export function SpecStrip({
   weightGrams,
   printMinutes,
   note,
+  wrap = true,
   className,
 }: SpecStripProps) {
   const parts: string[] = [
@@ -64,7 +67,11 @@ export function SpecStrip({
   return (
     <ul
       className={cn(
-        "flex flex-wrap items-center font-mono text-xs tracking-utility text-ink uppercase",
+        "flex items-center font-mono text-xs tracking-utility text-ink uppercase",
+        // A prop rather than a class from the caller: cn has no tailwind-merge,
+        // so flex-wrap here and flex-nowrap outside would both ship and source
+        // order would decide. On a card this has to be one line.
+        wrap ? "flex-wrap" : "flex-nowrap overflow-hidden text-ellipsis whitespace-nowrap",
         className,
       )}
     >

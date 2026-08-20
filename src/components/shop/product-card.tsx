@@ -89,7 +89,7 @@ export function ProductCard({ product, fadeDelayMs, tall, className }: ProductCa
           weightGrams={product.spec.weightGrams ?? undefined}
           printMinutes={product.spec.printMinutes ?? undefined}
           note={product.spec.note ?? undefined}
-          className="flex-nowrap overflow-hidden text-ellipsis whitespace-nowrap"
+          wrap={false}
         />
       </div>
     </Link>
