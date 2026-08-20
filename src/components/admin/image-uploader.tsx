@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { Button, Input, UTILITY_TEXT } from "@/components/ui";
+import { Button, Input, Notice, UTILITY_TEXT } from "@/components/ui";
 import { createClient } from "@/lib/supabase/browser";
 import { PRODUCT_IMAGES_BUCKET, productImageUrl } from "@/lib/product-image-url";
 import type { ProductImageInput } from "@/lib/validation/product";
@@ -139,7 +139,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
         </p>
       </div>
 
-      {error && <p className="rounded-card border-2 border-magenta p-3">{error}</p>}
+      {error && <Notice role="alert">{error}</Notice>}
 
       {pending.length > 0 && (
         <ul className="flex flex-col gap-2">

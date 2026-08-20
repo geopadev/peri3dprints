@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Button, EmptyState, Money, Skeleton } from "@/components/ui";
+import { Button, EmptyState, Money, Notice, Skeleton } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { productImageUrl } from "@/lib/product-image-url";
@@ -108,25 +108,25 @@ export function CartContents({
   return (
     <div className="flex flex-col gap-5">
       {priced.removed.length > 0 && (
-        <p className="rounded-card border-2 border-magenta p-3">
+        <Notice role="alert">
           {priced.removed.map((item) => item.title).join(", ")}{" "}
           {priced.removed.length === 1 ? "is" : "are"}{" "}
           {priced.removed.every((item) => item.reason === "sold-out")
             ? "sold out"
             : "no longer available"}{" "}
           and {priced.removed.length === 1 ? "was" : "were"} taken out of your cart.
-        </p>
+        </Notice>
       )}
 
       {priced.reduced.length > 0 && (
-        <div className="rounded-card border-2 border-magenta p-3">
+        <Notice role="alert">
           {priced.reduced.map((item) => (
             <p key={item.title}>
               I only have {item.available} of {item.title} left, so your cart was changed from{" "}
               {item.requested}.
             </p>
           ))}
-        </div>
+        </Notice>
       )}
 
       <ul className="flex flex-col gap-4">

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field, Input, Notice } from "@/components/ui";
 import { changePassword, type ChangePasswordState } from "./actions";
 
 const INITIAL: ChangePasswordState = { status: "idle" };
@@ -42,7 +42,9 @@ export function ChangePasswordForm() {
       <SubmitButton />
 
       {state.status === "saved" && (
-        <p className="rounded-card border-2 border-ink bg-lime p-3">Password changed.</p>
+        <Notice tone="done" role="status">
+          Password changed.
+        </Notice>
       )}
     </form>
   );

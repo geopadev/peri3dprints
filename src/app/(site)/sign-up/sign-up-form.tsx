@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field, Input, Notice } from "@/components/ui";
 import { signUp, type SignUpState } from "./actions";
 
 const INITIAL: SignUpState = { status: "idle" };
@@ -24,9 +24,7 @@ export function SignUpForm({ next }: { next: string }) {
     <form action={formAction} className="flex flex-col gap-5">
       <input type="hidden" name="next" value={next} />
 
-      {state.status === "error" && (
-        <p className="rounded-card border-2 border-magenta p-3">{state.message}</p>
-      )}
+      {state.status === "error" && <Notice role="alert">{state.message}</Notice>}
 
       <Field label="What should we call you" error={fieldErrors?.display_name}>
         {(control) => (

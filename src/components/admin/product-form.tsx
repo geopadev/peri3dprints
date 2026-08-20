@@ -7,6 +7,7 @@ import {
   Card,
   Field,
   Input,
+  Notice,
   Select,
   SpecStrip,
   Textarea,
@@ -138,9 +139,9 @@ export function ProductForm({ initial, categories, onSave }: ProductFormProps) {
       }}
     >
       {message && (
-        <Card className="border-magenta">
+        <Notice role="alert">
           <p>{message}</p>
-        </Card>
+        </Notice>
       )}
 
       <section className="flex flex-col gap-3">

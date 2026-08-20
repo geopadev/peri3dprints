@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Button, Card, EmptyState, Input } from "@/components/ui";
+import { Button, Card, EmptyState, Input, Notice } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { deleteCategory, saveCategory } from "./actions";
 import { categoryErrorMessage } from "./messages";
@@ -30,9 +30,9 @@ export default async function AdminCategoriesPage({
       <p>Groups on the shop page. A print can sit in one of them, or none.</p>
 
       {errorMessage && (
-        <Card className="border-magenta">
+        <Notice role="alert">
           <p>{errorMessage}</p>
-        </Card>
+        </Notice>
       )}
 
       <Card className="flex flex-col gap-4">

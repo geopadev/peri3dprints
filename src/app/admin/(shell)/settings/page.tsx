@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Button, Card, Input, Textarea } from "@/components/ui";
+import { Button, Card, Input, Notice, Textarea } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { saveSettings } from "./actions";
 import { settingsErrorMessage } from "./messages";
@@ -29,15 +29,15 @@ export default async function AdminSettingsPage({
       <h1 className="text-2xl">Settings</h1>
 
       {errorMessage && (
-        <Card className="border-magenta">
+        <Notice role="alert">
           <p>{errorMessage}</p>
-        </Card>
+        </Notice>
       )}
 
       {saved && !errorMessage && (
-        <Card className="border-ink bg-lime">
+        <Notice tone="done" role="status">
           <p>Saved.</p>
-        </Card>
+        </Notice>
       )}
 
       <form action={saveSettings} className="flex flex-col gap-6">

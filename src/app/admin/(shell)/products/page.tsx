@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Button, Card, EmptyState, Money, Tag, UTILITY_TEXT } from "@/components/ui";
+import { Button, Card, EmptyState, Money, Notice, Tag, UTILITY_TEXT } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { productImageUrl } from "@/lib/product-image-url";
 import { ProductFilters } from "./product-filters";
@@ -66,9 +66,9 @@ export default async function AdminProductsPage({
       <ProductFilters />
 
       {error && (
-        <Card className="border-magenta">
+        <Notice role="alert">
           <p>Could not load your prints. Reload the page and try again.</p>
-        </Card>
+        </Notice>
       )}
 
       {!error && products.length === 0 && (

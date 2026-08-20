@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Card } from "@/components/ui";
+import { Card, Notice } from "@/components/ui";
 import { safeNext } from "@/lib/safe-next";
 import { SignInForm } from "./sign-in-form";
 
@@ -34,10 +34,10 @@ export default async function SignInPage({
         </div>
 
         {error === "link" && (
-          <p className="rounded-card border-2 border-magenta p-4">
+          <Notice role="alert" className="p-4">
             That link did not work. It may have been used already or expired. Sign in below, or ask
             for a new one if you were resetting your password.
-          </p>
+          </Notice>
         )}
 
         <SignInForm next={next} />
