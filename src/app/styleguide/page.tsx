@@ -9,6 +9,7 @@ import {
   Tag,
   UTILITY_TEXT,
 } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { DialogDemo, FieldDemos, ToastDemo } from "./interactive-demos";
 
 export const metadata: Metadata = {
@@ -83,7 +84,7 @@ export default function StyleguidePage() {
 
       <Section
         title="Colour"
-        note="One loud accent per screen. Flame is the primary button and nothing else."
+        note="One loud accent per section, never two competing inside one card. Flame is the primary button and the block that opens a section."
       >
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {SWATCHES.map((s) => (
@@ -124,8 +125,15 @@ export default function StyleguidePage() {
         note="Press shifts the shadow from 4px to 2px and moves the button into it."
       >
         <div className="flex flex-col gap-6">
-          {(["primary", "secondary", "ghost", "danger"] as const).map((variant) => (
-            <div key={variant} className="flex flex-col gap-3">
+          {(["primary", "secondary", "ghost", "danger", "onAccent"] as const).map((variant) => (
+            <div
+              key={variant}
+              className={cn(
+                "flex flex-col gap-3",
+                // onAccent only makes sense on an accent, so show it on one.
+                variant === "onAccent" && "rounded-card border-2 border-ink bg-action p-4",
+              )}
+            >
               <h3 className={UTILITY_TEXT}>{variant}</h3>
               <div className="flex flex-wrap items-center gap-3">
                 <Button variant={variant} size="sm">
@@ -194,7 +202,11 @@ export default function StyleguidePage() {
           <Tag>Neutral</Tag>
           <Tag tone="stock">In stock</Tag>
           <Tag tone="sale">Sale</Tag>
-          <Tag tone="info">Made to order</Tag>
+          <Tag tone="info">Info</Tag>
+          <Tag tone="made">Made to order</Tag>
+          <Tag tone="stock" size="sm">
+            Small
+          </Tag>
         </div>
       </Section>
 
