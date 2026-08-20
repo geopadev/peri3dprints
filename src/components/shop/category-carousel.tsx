@@ -2,8 +2,9 @@ import { getCategories } from "@/lib/products";
 import { CategoryCarouselTrack } from "./category-carousel-track";
 
 /**
- * The masthead, which is also the category carousel: one card that changes
- * rather than a separate strip underneath it.
+ * The masthead, with the category carousel on it rather than in a strip
+ * underneath. The orange card is the stage the cards sit on, so the shop name
+ * and the categories read as one object.
  *
  * Server Component, so the categories are fetched here and the only client
  * JavaScript is the timer, the arrows and the swipe.
@@ -13,18 +14,18 @@ export async function CategoryCarousel() {
 
   return (
     <section className="px-5 pt-5">
-      {categories.length > 0 ? (
-        <nav aria-label="Categories">
-          <CategoryCarouselTrack categories={categories} />
-        </nav>
-      ) : (
-        // No categories yet, so there is nothing to rotate through. The
-        // masthead still has to exist.
-        <div className="rounded-card border-2 border-ink bg-action px-4 py-6 text-ink shadow-hard sm:py-8">
-          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl">Peri 3D Prints</h1>
-          <p className="mt-2">Printed to order in Cyprus. Message me if you want it different.</p>
-        </div>
-      )}
+      <div className="rounded-card border-2 border-ink bg-action px-4 py-6 text-ink shadow-hard sm:px-6 sm:py-8">
+        <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl">Peri 3D Prints</h1>
+        <p className="mt-2 max-w-md">
+          Printed to order in Cyprus. Message me if you want it different.
+        </p>
+
+        {categories.length > 0 && (
+          <nav aria-label="Categories" className="mt-6">
+            <CategoryCarouselTrack categories={categories} />
+          </nav>
+        )}
+      </div>
     </section>
   );
 }
