@@ -8,6 +8,7 @@ import { UTILITY_TEXT } from "@/components/ui/type";
 
 const LINKS = [
   { href: "/admin", label: "Today" },
+  { href: "/admin/orders", label: "Orders" },
   { href: "/admin/products", label: "Prints" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/messages", label: "Messages" },
