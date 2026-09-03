@@ -80,6 +80,7 @@ export async function getHeroProducts(limit: number): Promise<ProductCardData[]>
     .from("products")
     .select(CARD_FIELDS)
     .eq("status", "active")
+    .not("tags", "cs", "{quote}")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -135,7 +136,8 @@ export async function getShopProducts(filters: ShopFilters): Promise<ShopResult>
   let query = supabase
     .from("products")
     .select(CARD_FIELDS, { count: "exact" })
-    .eq("status", "active");
+    .eq("status", "active")
+    .not("tags", "cs", "{quote}");
 
   if (categoryId) {
     query = query.eq("category_id", categoryId);
@@ -209,6 +211,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     // Explicit even though RLS already hides drafts from a buyer session, so
     // this stays correct even if the policy ever changes.
     .eq("status", "active")
+    .not("tags", "cs", "{quote}")
     .maybeSingle();
 
   if (!data) return null;
@@ -259,6 +262,7 @@ export async function getRelatedProducts(
     .from("products")
     .select(CARD_FIELDS)
     .eq("status", "active")
+    .not("tags", "cs", "{quote}")
     .eq("category_id", categoryId)
     .neq("id", excludeProductId)
     .order("created_at", { ascending: false })
