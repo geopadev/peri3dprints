@@ -13,9 +13,16 @@ export async function replyToConversation(formData: FormData): Promise<void> {
 
   const conversationId = String(formData.get("conversationId") ?? "");
   const body = String(formData.get("body") ?? "").trim();
+  let attachments: unknown[] = [];
+  try {
+    const raw = JSON.parse(String(formData.get("attachments") ?? "[]"));
+    if (Array.isArray(raw)) attachments = raw;
+  } catch {
+    attachments = [];
+  }
 
   if (!conversationId) redirect("/admin/messages");
-  if (!body) redirect(`/admin/messages/${conversationId}?error=empty`);
+  if (!body && attachments.length === 0) redirect(`/admin/messages/${conversationId}?error=empty`);
 
   const supabase = await createClient();
   const { error } = await supabase.from("messages").insert({
@@ -23,7 +30,8 @@ export async function replyToConversation(formData: FormData): Promise<void> {
     sender_id: user.id,
     sender_role: "owner",
     kind: "text",
-    body,
+    body: body || null,
+    attachments: attachments as never,
   });
 
   if (error) redirect(`/admin/messages/${conversationId}?error=failed`);
@@ -85,4 +93,54 @@ export async function closeConversation(formData: FormData): Promise<void> {
 
   revalidatePath("/admin/messages");
   redirect("/admin/messages");
+}
+
+/**
+ * Turns a custom request into something that can be bought: a one off product
+ * tagged 'quote' so it never appears in the catalogue, and a message with the
+ * link and price. The buyer adds it to the cart and asks to buy like anything
+ * else, so there is still exactly one path that writes an order.
+ */
+export async function sendQuote(formData: FormData): Promise<void> {
+  const user = await requireOwner("/admin/messages");
+  const conversationId = String(formData.get("conversationId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const euros = String(formData.get("amount") ?? "").trim();
+  if (!conversationId) redirect("/admin/messages");
+  const priceCents = Math.round(Number(euros.replace(",", ".")) * 100);
+  if (!title || !Number.isFinite(priceCents) || priceCents <= 0)
+    redirect(`/admin/messages/${conversationId}?error=amount`);
+
+  const supabase = await createClient();
+  const slug = `quote-${Date.now().toString(36)}-${title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 40)}`;
+  const { data: product, error } = await supabase
+    .from("products")
+    .insert({
+      slug,
+      title,
+      description,
+      price_cents: priceCents,
+      status: "active",
+      made_to_order: true,
+      tags: ["quote"],
+    })
+    .select("slug")
+    .single();
+  if (error || !product) redirect(`/admin/messages/${conversationId}?error=failed`);
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  await supabase.from("messages").insert({
+    conversation_id: conversationId,
+    sender_id: user.id,
+    sender_role: "owner",
+    kind: "text",
+    body: `Here is your quote: ${title} for ${(priceCents / 100).toFixed(2)} euros. ${description ? description + " " : ""}Add it to your cart here and ask to buy when you are ready: ${site}/product/${product.slug}`,
+  });
+  revalidatePath(`/admin/messages/${conversationId}`);
+  redirect(`/admin/messages/${conversationId}`);
 }

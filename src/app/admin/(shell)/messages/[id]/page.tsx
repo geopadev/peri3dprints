@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button, Card, Input, Notice, Textarea } from "@/components/ui";
-import { MessageList } from "@/app/(site)/messages/message-list";
-import { getConversation, getMessages } from "@/lib/chat";
+import { LiveThread } from "@/app/(site)/messages/live-thread";
+import { AttachmentPicker } from "@/app/(site)/messages/attachment-picker";
+import { Money } from "@/components/ui";
+import { getConversation, getMessages, signAttachments } from "@/lib/chat";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/supabase/require-owner";
-import { closeConversation, replyToConversation, sendPaymentLink } from "../actions";
+import { closeConversation, replyToConversation, sendPaymentLink, sendQuote } from "../actions";
 import { inboxErrorMessage } from "../messages";
 import { CannedReplies } from "./canned-replies";
 
@@ -34,6 +36,9 @@ export default async function AdminConversationPage({
   if (!conversation) notFound();
 
   const messages = await getMessages(id);
+  const withUrls = await Promise.all(
+    messages.map(async (m) => ({ ...m, attachments: await signAttachments(m.attachments) })),
+  );
 
   const supabase = await createClient();
 
@@ -47,6 +52,25 @@ export default async function AdminConversationPage({
     .select("canned_replies")
     .eq("id", 1)
     .maybeSingle();
+
+  const { data: details } =
+    conversation.kind === "custom_request"
+      ? await supabase
+          .from("custom_request_details")
+          .select("*")
+          .eq("conversation_id", id)
+          .maybeSingle()
+      : { data: null };
+  const referenceUrls = details?.reference_paths?.length
+    ? await signAttachments(
+        details.reference_paths.map((path) => ({
+          path,
+          name: path.split("/").pop() ?? path,
+          size: 0,
+          type: "image/*",
+        })),
+      )
+    : [];
 
   const canned = Array.isArray(settings?.canned_replies)
     ? (settings.canned_replies as unknown[]).filter(
@@ -74,7 +98,59 @@ export default async function AdminConversationPage({
         </Notice>
       )}
 
-      <MessageList messages={messages} />
+      {details && (
+        <Card accent="offer" className="flex flex-col gap-2">
+          <h2 className="text-xl">Custom request</h2>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+            {details.budget_cents !== null && (
+              <>
+                <dt className="font-semibold">Budget</dt>
+                <dd>
+                  <Money cents={details.budget_cents} />
+                </dd>
+              </>
+            )}
+            {details.deadline && (
+              <>
+                <dt className="font-semibold">Needed by</dt>
+                <dd>{details.deadline}</dd>
+              </>
+            )}
+            {details.colour_pref && (
+              <>
+                <dt className="font-semibold">Colour</dt>
+                <dd>{details.colour_pref}</dd>
+              </>
+            )}
+            {details.size_note && (
+              <>
+                <dt className="font-semibold">Size</dt>
+                <dd>{details.size_note}</dd>
+              </>
+            )}
+          </dl>
+          {referenceUrls.length > 0 && (
+            <ul className="flex flex-wrap gap-2">
+              {referenceUrls.map((f) =>
+                f.url ? (
+                  <li key={f.path}>
+                    <a href={f.url} target="_blank" rel="noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={f.url}
+                        alt={f.name}
+                        className="h-20 w-20 rounded-card border-2 border-ink object-cover"
+                      />
+                    </a>
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          )}
+        </Card>
+      )}
+
+      <LiveThread conversationId={id} initial={withUrls} viewer="owner" />
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-xl">Reply</h2>
@@ -82,6 +158,7 @@ export default async function AdminConversationPage({
         <form action={replyToConversation} className="flex flex-col gap-3">
           <input type="hidden" name="conversationId" value={conversation.id} />
           <Textarea id={REPLY_BOX_ID} name="body" rows={3} placeholder="Write back" />
+          <AttachmentPicker conversationId={id} bucket="chat-uploads" />
           <Button type="submit">Send</Button>
         </form>
       </Card>
@@ -111,6 +188,49 @@ export default async function AdminConversationPage({
           </Button>
         </form>
       </Card>
+
+      {conversation.kind === "custom_request" && (
+        <Card className="flex flex-col gap-3">
+          <h2 className="text-xl">Send a quote</h2>
+          <p className="text-sm">
+            Makes a one off print only they can buy, and posts the link into the thread.
+          </p>
+          <form action={sendQuote} className="flex flex-col gap-3">
+            <input type="hidden" name="conversationId" value={conversation.id} />
+            <label className="font-semibold" htmlFor="quote-title">
+              What it is
+            </label>
+            <Input
+              id="quote-title"
+              name="title"
+              required
+              placeholder="Cat phone stand, 10 cm, dark green"
+            />
+            <label className="font-semibold" htmlFor="quote-amount">
+              Price in euros
+            </label>
+            <Input
+              id="quote-amount"
+              name="amount"
+              inputMode="decimal"
+              required
+              placeholder="24.00"
+            />
+            <label className="font-semibold" htmlFor="quote-desc">
+              Anything to add
+            </label>
+            <Textarea
+              id="quote-desc"
+              name="description"
+              rows={2}
+              placeholder="Ready in about 4 days."
+            />
+            <Button type="submit" variant="secondary">
+              Send the quote
+            </Button>
+          </form>
+        </Card>
+      )}
 
       {conversation.status !== "closed" && (
         <form action={closeConversation}>

@@ -45,6 +45,7 @@ export default async function AdminMessagesPage() {
                     {entry.unreadForOwner && <Tag tone="sale">New</Tag>}
                     {entry.status === "closed" && <Tag>Closed</Tag>}
                     {entry.orderId && <Tag tone="info">About an order</Tag>}
+                    {entry.kind === "custom_request" && <Tag tone="sale">Custom request</Tag>}
                   </div>
                 </Card>
               </Link>
