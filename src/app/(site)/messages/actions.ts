@@ -67,7 +67,7 @@ export async function startConversation(formData: FormData): Promise<void> {
   if (messageError) redirect("/messages?error=failed");
 
   revalidatePath("/messages");
-  redirect("/messages");
+  redirect(`/messages/${conversation.id}`);
 }
 
 export async function sendMessage(formData: FormData): Promise<void> {
@@ -91,7 +91,9 @@ export async function sendMessage(formData: FormData): Promise<void> {
 
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    redirect(`/messages?error=${issue?.path[0] === "body" ? "empty" : "failed"}`);
+    redirect(
+      `/messages/${String(formData.get("conversationId") ?? "")}?error=${issue?.path[0] === "body" ? "empty" : "failed"}`,
+    );
   }
 
   const { conversationId, body, attachments: files } = parsed.data;
@@ -116,10 +118,10 @@ export async function sendMessage(formData: FormData): Promise<void> {
     attachments: files,
   });
 
-  if (error) redirect("/messages?error=failed");
+  if (error) redirect(`/messages/${conversationId}?error=failed`);
 
-  revalidatePath("/messages");
-  redirect("/messages");
+  revalidatePath(`/messages/${conversationId}`);
+  redirect(`/messages/${conversationId}`);
 }
 
 /** Clears the buyer's unread flag when they open the thread. */

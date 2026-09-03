@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Button, Card, Notice, Textarea } from "@/components/ui";
+import { Button, Card, EmptyState, Notice, Tag, Textarea } from "@/components/ui";
+import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { UTILITY_TEXT } from "@/components/ui/type";
-import { getMessages, getMyConversation } from "@/lib/chat";
+import { cn } from "@/lib/cn";
+import { getMyConversations } from "@/lib/chat";
 import { getSettings } from "@/lib/products";
 import { createClient } from "@/lib/supabase/server";
 import { whatsappLink } from "@/lib/whatsapp-link";
-import { markRead, sendMessage, startConversation } from "./actions";
+import { startConversation } from "./actions";
 import { chatErrorMessage } from "./messages";
-import { MessageList } from "./message-list";
 
-export const metadata: Metadata = {
-  title: "Messages",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = { title: "Messages", robots: { index: false, follow: false } };
 
 export default async function MessagesPage({
   searchParams,
@@ -24,19 +23,15 @@ export default async function MessagesPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   // One of the two sign in walls in the whole site, per CLAUDE.md section 6.
   if (!user) redirect("/sign-in?next=%2Fmessages");
 
   const { error } = await searchParams;
   const errorMessage = chatErrorMessage(error);
+  const [conversations, settings] = await Promise.all([getMyConversations(), getSettings()]);
 
-  const [conversation, settings] = await Promise.all([getMyConversation(), getSettings()]);
-  const messages = conversation ? await getMessages(conversation.id) : [];
-
-  if (conversation?.unreadForBuyer) {
-    await markRead(conversation.id);
-  }
+  // One thread and nothing else to choose between: go straight into it.
+  if (conversations.length === 1 && !error) redirect(`/messages/${conversations[0].id}`);
 
   const whatsappHref = settings.whatsappNumber
     ? whatsappLink(settings.whatsappNumber, "Hi, I have a question about a print.")
@@ -46,8 +41,6 @@ export default async function MessagesPage({
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-5 py-8">
       <div>
         <h1 className="text-2xl">Messages</h1>
-        {/* The brief asks for this in as many words: it is one person, and
-            roughly when he answers. */}
         <p className="mt-2">
           This goes straight to me, not a bot. I answer most days, usually in the evening.
         </p>
@@ -59,31 +52,25 @@ export default async function MessagesPage({
         </Notice>
       )}
 
-      {conversation ? (
-        <>
-          <MessageList messages={messages} />
+      {conversations.length > 1 && (
+        <ul className="flex flex-col gap-3">
+          {conversations.map((c) => (
+            <li key={c.id}>
+              <Link href={`/messages/${c.id}`} className={cn("block", FOCUS_RING)}>
+                <Card interactive className="flex items-center justify-between gap-3">
+                  <span className="truncate font-semibold">{c.subject ?? "Chat with me"}</span>
+                  <span className="flex shrink-0 gap-2">
+                    {c.unreadForBuyer && <Tag tone="sale">New</Tag>}
+                    {c.orderId && <Tag tone="info">Order</Tag>}
+                  </span>
+                </Card>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
-          <Card className="flex flex-col gap-3">
-            <form action={sendMessage} className="flex flex-col gap-3">
-              <input type="hidden" name="conversationId" value={conversation.id} />
-              <label className="font-semibold" htmlFor="chat-body">
-                Write a message
-              </label>
-              <Textarea id="chat-body" name="body" rows={3} placeholder="Ask me anything" />
-              <div className="flex flex-wrap gap-3">
-                <Button type="submit">Send</Button>
-                {whatsappHref && (
-                  <a href={whatsappHref} target="_blank" rel="noreferrer">
-                    <Button type="button" variant="secondary">
-                      WhatsApp instead
-                    </Button>
-                  </a>
-                )}
-              </div>
-            </form>
-          </Card>
-        </>
-      ) : (
+      {conversations.length === 0 ? (
         <Card className="flex flex-col gap-3">
           <form action={startConversation} className="flex flex-col gap-3">
             <label className="font-semibold" htmlFor="chat-start">
@@ -109,6 +96,20 @@ export default async function MessagesPage({
             </div>
           </form>
         </Card>
+      ) : (
+        <EmptyState
+          title="Want to ask something new"
+          description="Start another conversation."
+          action={
+            <form
+              action={startConversation}
+              className="flex w-full max-w-md flex-col gap-3 text-left"
+            >
+              <Textarea name="body" rows={3} required placeholder="Ask me anything" />
+              <Button type="submit">Send</Button>
+            </form>
+          }
+        />
       )}
     </main>
   );

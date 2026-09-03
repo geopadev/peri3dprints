@@ -110,16 +110,13 @@ function toKind(raw: string): MessageKind {
   return raw === "payment_link" || raw === "delivery_details" ? raw : "text";
 }
 
-/**
- * The buyer's own thread. One general conversation per buyer keeps the widget
- * simple: he is talking to one person, not opening tickets.
- */
-export async function getMyConversation(): Promise<Conversation | null> {
+/** Every conversation the signed in buyer has, newest first. RLS scopes it. */
+export async function getMyConversations(): Promise<Conversation[]> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return [];
 
   const { data } = await supabase
     .from("conversations")
@@ -127,12 +124,9 @@ export async function getMyConversation(): Promise<Conversation | null> {
       "id, subject, kind, status, order_id, product_id, display_name, email, last_message_at, unread_for_owner, unread_for_buyer",
     )
     .eq("buyer_id", user.id)
-    .eq("kind", "general")
-    .order("last_message_at", { ascending: false, nullsFirst: false })
-    .limit(1)
-    .maybeSingle();
+    .order("last_message_at", { ascending: false, nullsFirst: false });
 
-  return data ? toConversation(data) : null;
+  return (data ?? []).map(toConversation);
 }
 
 type ConversationRow = {

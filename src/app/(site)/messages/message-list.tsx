@@ -3,6 +3,10 @@ import { UTILITY_TEXT } from "@/components/ui/type";
 import { cn } from "@/lib/cn";
 import type { ChatMessage } from "@/lib/chat";
 
+export type ThreadMessage = Omit<ChatMessage, "attachments"> & {
+  attachments: (ChatMessage["attachments"][number] & { url?: string | null })[];
+};
+
 function time(iso: string): string {
   return new Intl.DateTimeFormat("en-CY", {
     hour: "2-digit",
@@ -17,7 +21,7 @@ function time(iso: string): string {
  * the way every messaging app on a phone already works, so nobody has to learn
  * which side means what.
  */
-export function MessageList({ messages }: { messages: ChatMessage[] }) {
+export function MessageList({ messages }: { messages: ThreadMessage[] }) {
   if (messages.length === 0) return null;
 
   return (
@@ -40,6 +44,27 @@ export function MessageList({ messages }: { messages: ChatMessage[] }) {
                 <DeliveryCard payload={message.payload} />
               ) : (
                 message.body && <p className="whitespace-pre-line">{message.body}</p>
+              )}
+
+              {message.attachments.length > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {message.attachments.map((file) =>
+                    file.url ? (
+                      <li key={file.path}>
+                        <a href={file.url} target="_blank" rel="noreferrer">
+                          {/* Plain img: these are short lived signed URLs on a
+                              private bucket, which next/image cannot optimise. */}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={file.url}
+                            alt={file.name}
+                            className="h-24 w-24 rounded-card border-2 border-ink object-cover"
+                          />
+                        </a>
+                      </li>
+                    ) : null,
+                  )}
+                </ul>
               )}
 
               <p className={cn(UTILITY_TEXT, "mt-2 text-ink")}>{time(message.createdAt)}</p>

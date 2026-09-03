@@ -1,3 +1,4 @@
+import { ChatLauncher } from "@/components/shop/chat-launcher";
 import { SiteHeader } from "@/components/shop/site-header";
 
 /**
@@ -10,6 +11,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     <>
       <SiteHeader />
       {children}
+      <ChatLauncher />
     </>
   );
 }
