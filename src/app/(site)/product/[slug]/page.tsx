@@ -53,8 +53,27 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ? whatsappLink(settings.whatsappNumber, `Hi, I'm asking about ${product.title}: ${productUrl}`)
     : null;
 
+  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+  const inStock = product.madeToOrder || (product.stockQty ?? 0) > 0;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: product.shortDescription ?? product.description ?? undefined,
+    sku: product.slug,
+    image: product.images.map((image) => productImageUrl(image.storagePath, 1600)),
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "EUR",
+      price: (product.priceCents / 100).toFixed(2),
+      availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      url: `${site}/product/${product.slug}`,
+    },
+  };
+
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-10 px-5 py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="grid gap-8 lg:grid-cols-2">
         <ProductGallery images={product.images} />
 
