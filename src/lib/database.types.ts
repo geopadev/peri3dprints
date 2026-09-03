@@ -700,6 +700,10 @@ export type Database = {
       }
       generate_order_number: { Args: never; Returns: string }
       is_owner: { Args: never; Returns: boolean }
+      get_order_by_token: {
+        Args: { p_order_number: string; p_token: string }
+        Returns: Json
+      }
       set_user_role: {
         Args: { p_role: string; p_user_id: string }
         Returns: undefined
@@ -719,7 +723,7 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "refunded"
-      payment_method: "card" | "cod" | "bank_transfer"
+      payment_method: "card" | "cod" | "bank_transfer" | "link"
       payment_status: "unpaid" | "paid" | "refunded" | "failed"
       product_status: "draft" | "active" | "archived"
       sender_role: "buyer" | "owner"
