@@ -163,3 +163,10 @@ export function updateQuantity(
 export function removeLine(productId: string, variantId: string | null): void {
   updateQuantity(productId, variantId, 0);
 }
+
+/** Empties the cart after an order is placed. Persists, so a reload stays empty. */
+export function clear(): void {
+  lines = [];
+  save();
+  emit();
+}

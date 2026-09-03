@@ -101,8 +101,7 @@ export function CartContents({
       router.push(`/sign-in?next=${encodeURIComponent(pathname)}`);
       return;
     }
-    // Checkout is not built yet (stage 9). Signed in visitors land here with
-    // nothing broken to click, rather than a button with nowhere to go.
+    router.push("/ask-to-buy");
   }
 
   return (
@@ -190,7 +189,7 @@ export function CartContents({
           <span className="font-semibold">Subtotal</span>
           <Money cents={priced.subtotalCents} className="text-lg font-semibold" />
         </div>
-        <p className="text-sm text-ink-soft">Shipping is worked out at checkout.</p>
+        <p className="text-sm">Posting or collecting is sorted out with me after you order.</p>
 
         <Button onClick={() => void askToBuy()} disabled={pending}>
           Ask to buy
