@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, DM_Mono, Hanken_Grotesk } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import "@/lib/env";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -45,7 +47,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${bricolage.variable} ${hanken.variable} ${dmMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

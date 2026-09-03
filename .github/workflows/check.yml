@@ -1,0 +1,35 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Placeholders so env.ts parses at build. Nothing here reaches a real project.
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-not-real
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx vitest run
+      - run: npm run build
+      - name: no service role key or admin client in client bundles
+        run: |
+          if grep -rl "SUPABASE_SERVICE_ROLE_KEY\|service_role" .next/static 2>/dev/null; then
+            echo "service role reference found in a client chunk"; exit 1
+          fi
+          if grep -rl "supabase/admin" .next/static 2>/dev/null; then
+            echo "admin client imported into a client chunk"; exit 1
+          fi
+          echo "client bundles clean"
