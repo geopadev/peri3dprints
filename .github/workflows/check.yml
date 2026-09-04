@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Placeholders so env.ts parses at build. Nothing here reaches a real project.
-      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      SITE_URL: http://localhost:3000
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-not-real
     steps:

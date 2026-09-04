@@ -21,11 +21,15 @@ the final say on where that email link points, and only you can change it.
 1. Go to https://vercel.com/dashboard and open the **peri3dprints** project.
 2. **Settings** (top tabs) then **Environment Variables** (left menu).
 3. Find `NEXT_PUBLIC_SITE_URL`. It probably says `http://localhost:3000`.
-4. Click the three dots next to it, **Edit**.
-5. Change the value to your real site address, the one you see in the browser when you
-   visit the deployed site. It looks like `https://peri3dprints.vercel.app`
-   (no slash at the end).
-6. Make sure it is ticked for **Production**. Save.
+4. **Delete it** and add a new one named `SITE_URL` instead. Vercel warns that the
+   `NEXT_PUBLIC_` prefix exposes a value to the browser, and nothing in the browser needs
+   this one. Dropping the prefix also means you can change it later without redeploying.
+5. Value: your real site address, the one in the browser when you visit the deployed site.
+   Looks like `https://peri3dprints.vercel.app`, no slash at the end.
+6. Tick **Production**. Save.
+
+   (If you would rather not touch it right now, the old name still works. The site will
+   not break either way.)
 
 ### 1b. Supabase
 
@@ -87,6 +91,9 @@ Once you have one:
    - `RESEND_API_KEY` = the API key
    - `EMAIL_FROM` = `Peri 3D Prints <orders@mail.yourdomain.com>`
    - `OWNER_EMAIL` = your own email, where you want to hear about new orders
+
+   None of these three need the `NEXT_PUBLIC_` prefix. They are secrets, and the browser
+   never sees them.
 8. Redeploy.
 
 Until you do this the site still works. Order emails are just skipped, not broken.
@@ -108,6 +115,7 @@ Then:
 4. Add those where you bought the domain, under DNS settings.
 5. Wait. Usually minutes, sometimes an hour. Vercel will show **Valid Configuration**.
 6. **Then go back and redo step 1** with the real domain instead of the vercel.app one.
+   `SITE_URL` is read at runtime, so that one takes effect without a redeploy.
 
 ---
 

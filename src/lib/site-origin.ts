@@ -6,18 +6,19 @@ import { headers } from "next/headers";
  * inside Supabase Auth emails, so getting it wrong sends a real buyer to a
  * page on their own machine.
  *
- * Order matters. NEXT_PUBLIC_SITE_URL wins, except when it says localhost and
- * we are plainly not on localhost: that combination means the variable was
- * copied from .env.example into a real deployment, which is exactly how the
- * confirmation email ended up pointing at localhost:3000. On Vercel the real
- * host is always available, so prefer it rather than trusting a stale value.
+ * Order matters. SITE_URL wins (NEXT_PUBLIC_SITE_URL is the old name and is
+ * still read), except when it says localhost and we are plainly not on
+ * localhost: that combination means the variable was copied from .env.example
+ * into a real deployment, which is exactly how a confirmation email ended up
+ * pointing at localhost:3000. On Vercel the real host is always available, so
+ * prefer it over a stale value.
  */
 function isLocal(url: string): boolean {
   return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(url);
 }
 
 export async function siteOrigin(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  const configured = (process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL)?.replace(/\/$/, "");
   const onVercel = Boolean(process.env.VERCEL);
 
   if (configured && !(onVercel && isLocal(configured))) return configured;

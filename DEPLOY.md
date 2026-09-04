@@ -52,7 +52,7 @@ Everything below runs against the production project, not dev.
 - [ ] Import the GitHub repo. Framework preset detects Next.js.
 - [ ] Environment variables, Production AND Preview set separately. Preview must point at
       the dev project. From `.env.example`:
-      `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+      `SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
       `RESEND_API_KEY`, `EMAIL_FROM`, `OWNER_EMAIL`. Leave the BOX NOW and service role
       ones empty until you have them. The build fails with a sentence naming any required
       one that is missing.
@@ -67,8 +67,8 @@ Everything below runs against the production project, not dev.
 - [ ] Wait for the domain to show Valid Configuration. The TLS certificate is issued
       automatically by Let's Encrypt through Vercel, usually within minutes. There is
       nothing to buy and nothing to upload.
-- [ ] Set `NEXT_PUBLIC_SITE_URL` to `https://<your domain>` in Production and redeploy.
-      Emails and the sitemap use it.
+- [ ] Set `SITE_URL` to `https://<your domain>` in Production. Emails, the sitemap and
+      the canonical URLs use it. No redeploy needed: it is read at runtime.
 - [ ] Go back to Supabase Auth URL Configuration and confirm the real domain is there.
 
 ## 5. Content
