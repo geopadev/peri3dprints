@@ -31,6 +31,13 @@ export default async function OrderPage({
   if (!order) notFound();
 
   const reached = STATUS_STEPS.indexOf(order.status as (typeof STATUS_STEPS)[number]);
+
+  // payment_link_sent is the owner's own bookkeeping and says nothing the
+  // buyer cannot already see in the conversation, so it stays out.
+  const updates = order.events
+    .filter((e) => e.type !== "payment_link_sent")
+    .slice()
+    .reverse();
   const address = order.shippingAddress;
 
   return (
@@ -130,6 +137,32 @@ export default async function OrderPage({
           </p>
         )}
       </Card>
+
+      {updates.length > 0 && (
+        <Card className="flex flex-col gap-3">
+          <h2 className="text-xl">Updates</h2>
+          {/* Newest first: the thing that just changed is the thing they came
+              to read. */}
+          <ol className="flex flex-col gap-3">
+            {updates.map((update, i) => (
+              <li key={`${update.at}-${i}`} className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Tag tone="info" size="sm">
+                    {update.to ? statusLabel(update.to) : "Update"}
+                  </Tag>
+                  <span className={cn(UTILITY_TEXT, "text-ink")}>{when(update.at)}</span>
+                </div>
+                {update.note && <p className="whitespace-pre-line">{update.note}</p>}
+                {update.tracking && (
+                  <p className="text-sm">
+                    Tracking: <span className="font-mono">{update.tracking}</span>
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
 
       {order.conversationId && (
         <Link href={`/messages/${order.conversationId}`}>

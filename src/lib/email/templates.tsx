@@ -52,17 +52,22 @@ export function OrderConfirmedEmail(p: {
   );
 }
 
-export function OrderShippedEmail(p: {
+export function OrderUpdateEmail(p: {
   name: string;
   orderNumber: string;
   orderUrl: string;
+  statusLabel: string;
+  note: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
 }) {
   return (
-    <Frame preview={`Order ${p.orderNumber} is on its way`}>
+    <Frame preview={`Order ${p.orderNumber}: ${p.statusLabel}`}>
       <Text>Hi {p.name},</Text>
-      <Text>Order {p.orderNumber} is posted.</Text>
+      <Text>
+        Order {p.orderNumber} is now: {p.statusLabel}.
+      </Text>
+      {p.note && <Text>{p.note}</Text>}
       {p.trackingNumber && (
         <Text>
           Tracking:{" "}
@@ -70,9 +75,9 @@ export function OrderShippedEmail(p: {
         </Text>
       )}
       <Text>
-        Order page: <Link href={p.orderUrl}>{p.orderUrl}</Link>
+        Your order page: <Link href={p.orderUrl}>{p.orderUrl}</Link>
       </Text>
-      <Text>Message me on the site if anything is wrong when it arrives.</Text>
+      <Text>Message me on the site if anything is wrong.</Text>
       <Text>Peri</Text>
     </Frame>
   );

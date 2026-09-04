@@ -28,7 +28,14 @@ export type OrderView = {
     unitCents: number;
     quantity: number;
   }[];
-  events: { type: string; at: string; payload: unknown }[];
+  unreadForBuyer: boolean;
+  events: {
+    type: string;
+    at: string;
+    to: string | null;
+    note: string | null;
+    tracking: string | null;
+  }[];
   conversationId: string | null;
 };
 
@@ -79,9 +86,20 @@ export function toOrderView(raw: unknown): OrderView | null {
           ]
         : [];
     }),
+    unreadForBuyer: r.unreadForBuyer === true,
     events: (Array.isArray(r.events) ? r.events : []).flatMap((e) => {
       const o = obj(e);
-      return o ? [{ type: str(o.type), at: str(o.at), payload: o.payload }] : [];
+      return o
+        ? [
+            {
+              type: str(o.type),
+              at: str(o.at),
+              to: strOrNull(o.to),
+              note: strOrNull(o.note),
+              tracking: strOrNull(o.tracking),
+            },
+          ]
+        : [];
     }),
     conversationId: strOrNull(r.conversationId),
   };

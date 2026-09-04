@@ -167,23 +167,35 @@ export default async function AdminOrderPage({
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-xl">Progress</h2>
-        <form action={setStatus} className="flex flex-wrap gap-2">
+        <form action={setStatus} className="flex flex-col gap-3">
           <input type="hidden" name="orderId" value={order.id} />
-          {STATUS_STEPS.map((step, i) => (
-            <Button
-              key={step}
-              type="submit"
-              name="status"
-              value={step}
-              size="sm"
-              variant={i <= reached ? "primary" : "secondary"}
-            >
-              {statusLabel(step)}
-            </Button>
-          ))}
+          <label className="font-semibold" htmlFor="status-note">
+            Tell them what is happening
+          </label>
+          <Textarea
+            id="status-note"
+            name="note"
+            rows={2}
+            placeholder="Printing today, should be ready Thursday."
+          />
+          <div className="flex flex-wrap gap-2">
+            {STATUS_STEPS.map((step, i) => (
+              <Button
+                key={step}
+                type="submit"
+                name="status"
+                value={step}
+                size="sm"
+                variant={i <= reached ? "primary" : "secondary"}
+              >
+                {statusLabel(step)}
+              </Button>
+            ))}
+          </div>
         </form>
         <p className="text-sm">
-          Posted sends the buyer an email with the tracking, so add that first.
+          Whichever you press emails them the note and puts it on their order page. Add the tracking
+          below before pressing Posted, so it goes out with the email.
         </p>
       </Card>
 

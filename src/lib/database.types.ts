@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -297,6 +297,7 @@ export type Database = {
           total_cents: number
           tracking_number: string | null
           tracking_url: string | null
+          unread_for_buyer: boolean
           updated_at: string | null
         }
         Insert: {
@@ -325,6 +326,7 @@ export type Database = {
           total_cents: number
           tracking_number?: string | null
           tracking_url?: string | null
+          unread_for_buyer?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -353,6 +355,7 @@ export type Database = {
           total_cents?: number
           tracking_number?: string | null
           tracking_url?: string | null
+          unread_for_buyer?: boolean
           updated_at?: string | null
         }
         Relationships: [
@@ -707,6 +710,10 @@ export type Database = {
       set_user_role: {
         Args: { p_role: string; p_user_id: string }
         Returns: undefined
+      }
+      ship_zone_for: {
+        Args: { p_country: string }
+        Returns: Database["public"]["Enums"]["ship_zone"]
       }
     }
     Enums: {

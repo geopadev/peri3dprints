@@ -30,7 +30,9 @@ export default async function OrdersPage() {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("order_number, access_token, status, payment_status, total_cents, created_at")
+    .select(
+      "order_number, access_token, status, payment_status, total_cents, created_at, unread_for_buyer",
+    )
     .eq("buyer_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -64,6 +66,11 @@ export default async function OrdersPage() {
                     <Money cents={order.total_cents} className="font-semibold" />
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
+                    {order.unread_for_buyer && (
+                      <Tag tone="sale" size="sm">
+                        New update
+                      </Tag>
+                    )}
                     <Tag
                       tone={
                         order.payment_status === "paid"

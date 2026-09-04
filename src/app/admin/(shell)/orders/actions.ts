@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/supabase/require-owner";
-import { sendOrderShipped } from "@/lib/email";
+import { sendOrderUpdate } from "@/lib/email";
 import { trackingUrlFor } from "@/lib/shipping/manual";
-import { STATUS_STEPS } from "@/lib/orders";
+import { STATUS_STEPS, statusLabel } from "@/lib/orders";
 import type { Database, Json } from "@/lib/database.types";
 import { siteOrigin } from "@/lib/site-origin";
 
@@ -65,31 +65,37 @@ export async function setStatus(formData: FormData): Promise<void> {
   const user = await requireOwner("/admin/orders");
   const id = String(formData.get("orderId") ?? "");
   const status = String(formData.get("status") ?? "") as OrderStatus;
+  const note = String(formData.get("note") ?? "").trim() || null;
   if (!id) redirect("/admin/orders");
   if (!(STATUS_STEPS as readonly string[]).includes(status)) return back(id, "status");
 
   const supabase = await createClient();
   const { data: order, error } = await supabase
     .from("orders")
-    .update({ status })
+    // unread_for_buyer is what puts the badge on their order in /orders. It
+    // clears itself when they open the order, inside get_order_by_token.
+    .update({ status, unread_for_buyer: true })
     .eq("id", id)
     .select("order_number, email, full_name, access_token, tracking_number, tracking_url")
     .single();
   if (error || !order) return back(id, "failed");
 
-  await event(id, "status", { to: status, by: user.id, at: new Date().toISOString() });
+  await event(id, "status", { to: status, note, by: user.id, at: new Date().toISOString() });
 
-  if (status === "shipped") {
-    const site = await siteOrigin();
-    await sendOrderShipped({
-      to: order.email,
-      name: order.full_name,
-      orderNumber: order.order_number,
-      orderUrl: `${site}/order/${order.order_number}?t=${order.access_token}`,
-      trackingNumber: order.tracking_number,
-      trackingUrl: order.tracking_url,
-    });
-  }
+  // Every status change is worth an email now, not just posting, because the
+  // note is the point: the buyer should not have to open the site to find out
+  // what changed and why.
+  const site = await siteOrigin();
+  await sendOrderUpdate({
+    to: order.email,
+    name: order.full_name,
+    orderNumber: order.order_number,
+    orderUrl: `${site}/order/${order.order_number}?t=${order.access_token}`,
+    statusLabel: statusLabel(status),
+    note,
+    trackingNumber: order.tracking_number,
+    trackingUrl: order.tracking_url,
+  });
 
   revalidatePath(`/admin/orders/${id}`);
   return back(id);

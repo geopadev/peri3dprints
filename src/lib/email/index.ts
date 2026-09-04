@@ -2,7 +2,7 @@ import "server-only";
 import { sendEmail } from "./send";
 import {
   OrderConfirmedEmail,
-  OrderShippedEmail,
+  OrderUpdateEmail,
   OwnerNewMessageEmail,
   OwnerNewOrderEmail,
 } from "./templates";
@@ -23,18 +23,21 @@ export async function sendOrderConfirmed(p: {
   });
 }
 
-export async function sendOrderShipped(p: {
+/** Sent on every status change the owner makes, with whatever note they wrote. */
+export async function sendOrderUpdate(p: {
   to: string;
   name: string;
   orderNumber: string;
   orderUrl: string;
+  statusLabel: string;
+  note: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
 }) {
   return sendEmail({
     to: p.to,
-    subject: `Order ${p.orderNumber} is on its way`,
-    react: OrderShippedEmail(p),
+    subject: `Order ${p.orderNumber}: ${p.statusLabel}`,
+    react: OrderUpdateEmail(p),
   });
 }
 
