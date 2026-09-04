@@ -33,7 +33,11 @@ needs a domain first (step 4).
 
 ---
 
-# 2. Stop the database going to sleep
+# 2. Stop the database going to sleep — deferred on purpose
+
+Skipped for now, by choice: no reason to pay for Pro before there is real traffic.
+Come back to this before telling anyone the shop is open, or after it sits untouched
+for about a week and quietly goes down.
 
 **The problem:** your Supabase project is on the free plan. If nobody uses it for about a
 week it **pauses**, and while it is paused your whole site is broken: nobody can sign in,
