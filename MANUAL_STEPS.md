@@ -1,163 +1,221 @@
-# Things you have to do by hand
+# What you have to do by hand
 
-Everything code could not do, in the order to do it. `DEPLOY.md` is the short checklist;
-this is the version with the why. Items marked **blocking** stop the site working.
+Things I cannot do from here, because they need a login to a website, a payment, or a
+decision that is yours. In order. Each one says exactly where to click.
+
+If you only do one thing today, do number 1. It is the bug you just hit.
 
 ---
 
-## 1. Keep both Supabase projects from pausing, blocking
+# 1. Fix the verification email going to localhost
 
-Both projects paused twice during this build. On the free tier a project pauses after a
-week without traffic, and when it pauses the site is simply down: sign in fails, the
-catalogue is empty, every page errors. A restore takes several minutes and the schema is
-unreachable while it happens.
+**The problem:** someone signs up, gets the email, clicks the link, and lands on
+`http://localhost:3000/...` which is a page on *their own computer*, so nothing happens.
 
-**Do:** upgrade the production project to Pro before launch. Keep dev on free if you like,
-and expect to unpause it by hand when you come back to it.
+**Why:** two settings still say your site lives at localhost. One is in Vercel, one is in
+Supabase. I fixed the code so it stops trusting a stale localhost value, but Supabase has
+the final say on where that email link points, and only you can change it.
 
-## 2. Dev database, done
+### 1a. Vercel
 
-All fifteen migrations are applied to the dev project and the types are regenerated
-from the real schema. `npx supabase migration list` shows every row matching. Nothing
-for you to do here; it is recorded because the earlier draft of this file asked you to
-do it by hand.
+1. Go to https://vercel.com/dashboard and open the **peri3dprints** project.
+2. **Settings** (top tabs) then **Environment Variables** (left menu).
+3. Find `NEXT_PUBLIC_SITE_URL`. It probably says `http://localhost:3000`.
+4. Click the three dots next to it, **Edit**.
+5. Change the value to your real site address, the one you see in the browser when you
+   visit the deployed site. It looks like `https://peri3dprints.vercel.app`
+   (no slash at the end).
+6. Make sure it is ticked for **Production**. Save.
 
-One thing worth knowing came out of applying them. The original schema grants table wide
-UPDATE on `orders` to every signed in user, relying on row policies to keep buyers out.
-That was safe until this build added a row policy so a buyer can set delivery details on
-their own pending order, at which point the same grant let them set `payment_status`
-too. It is closed by a trigger (`orders_guard_buyer_update`) that refuses any non owner
-change outside the delivery columns and recomputes the money itself. Proven live: a
-buyer setting `total_cents` to 1 gets it recomputed to the real total, and setting
-`payment_status` to `paid` is refused. The same table wide grant also exists on
-`order_items` and `order_events`; those have owner only update policies and no buyer
-policy, so they are safe as long as nobody adds one without a matching trigger.
+### 1b. Supabase
 
-## 3. Production database, blocking
+1. Go to https://supabase.com/dashboard and open your project.
+2. Left menu: **Authentication**, then **URL Configuration**.
+3. **Site URL**: put the same address, `https://peri3dprints.vercel.app`.
+4. **Redirect URLs**: click Add URL and add these two, one at a time:
+   - `https://peri3dprints.vercel.app/**`
+   - `http://localhost:3000/**`  (so signing up still works while you develop)
+5. Save.
 
-Production has zero migrations applied. Steps 1 and 2 in `DEPLOY.md`. The one thing that
-is easy to get wrong: the very first owner cannot be made through the admin, because
-`set_user_role` refuses to run for anyone who is not already an owner. Once, in the SQL
-editor on production:
+### 1c. Redeploy and test
 
-```sql
-update public.profiles set role = 'owner' where email = 'your@email';
+1. Back in Vercel, **Deployments** tab, the top one, three dots, **Redeploy**.
+2. When it finishes, open your site in a **private/incognito window**.
+3. Sign up with an email you can read. Click the link in the email.
+4. You should land on your real site, signed in. If it still says localhost, the Supabase
+   Site URL in step 1b did not save. That one is the one that matters most.
+
+---
+
+# 2. Stop the database going to sleep
+
+**The problem:** your Supabase project is on the free plan. If nobody uses it for about a
+week it **pauses**, and while it is paused your whole site is broken: nobody can sign in,
+the shop is empty, every page errors. It paused twice while I was building.
+
+**Fix:** open the project in Supabase, **Settings** then **Billing**, and upgrade to
+**Pro** (about $25 a month). Do this before you tell anyone the shop is open.
+
+---
+
+# 3. Send emails properly
+
+**The problem:** right now Supabase sends the sign up emails itself, and it only allows a
+couple per hour before it silently stops. Real customers will not get their emails.
+
+You need a domain first (step 4), because email needs a domain to send from.
+
+Once you have one:
+
+1. Sign up at https://resend.com (free for 3,000 emails a month).
+2. **Domains** then **Add Domain**. Type `mail.yourdomain.com` (a subdomain, not the bare
+   domain).
+3. Resend shows you a list of DNS records. Go to wherever you bought the domain and add
+   them exactly as shown. Then click **Verify** in Resend. It takes 5 to 10 minutes.
+4. In Resend, **API Keys**, **Create API Key**. Copy it, you only see it once.
+5. In Resend, open your domain settings and turn **click tracking off**. If it is on, it
+   rewrites the links in the sign up emails and they break.
+6. Back in Supabase: **Project Settings**, **Authentication**, scroll to **SMTP Settings**,
+   turn on **Enable Custom SMTP** and fill in:
+   - Host: `smtp.resend.com`
+   - Port: `465`
+   - Username: `resend`
+   - Password: the API key from step 4
+   - Sender email: `orders@mail.yourdomain.com`
+   - Sender name: `Peri 3D Prints`
+7. In Vercel, Environment Variables, add three:
+   - `RESEND_API_KEY` = the API key
+   - `EMAIL_FROM` = `Peri 3D Prints <orders@mail.yourdomain.com>`
+   - `OWNER_EMAIL` = your own email, where you want to hear about new orders
+8. Redeploy.
+
+Until you do this the site still works. Order emails are just skipped, not broken.
+
+---
+
+# 4. Get a domain
+
+You do not have one yet. Buy one anywhere (Namecheap, Cloudflare, GoDaddy). Something like
+`peri3dprints.com`.
+
+Then:
+
+1. Vercel, your project, **Settings**, **Domains**, **Add**.
+2. Type your domain. Add `www.yourdomain.com` as well.
+3. Vercel shows you what to put at your registrar. Usually:
+   - Type `A`, Name `@`, Value `76.76.21.21`
+   - Type `CNAME`, Name `www`, Value `cname.vercel-dns.com`
+4. Add those where you bought the domain, under DNS settings.
+5. Wait. Usually minutes, sometimes an hour. Vercel will show **Valid Configuration**.
+6. **Then go back and redo step 1** with the real domain instead of the vercel.app one.
+
+---
+
+# 5. The security certificate (https)
+
+**Nothing to do.** You do not buy one and you do not install one. The moment step 4 works,
+Vercel gets a free certificate from Let's Encrypt automatically and renews it forever. Your
+site will show the padlock on its own.
+
+If it does not appear after an hour, it is almost always an old DNS record left over from
+somewhere else. Vercel's Domains page will tell you which one.
+
+---
+
+# 6. Make yourself the owner on the real site
+
+The admin is locked to owner accounts. The very first owner cannot be made through the
+admin, because there is nobody to approve it yet. So once, by hand:
+
+1. Sign up on your live site with the email you want to use. Confirm it.
+2. Supabase dashboard, **SQL Editor**, **New query**, paste this with your email:
+   ```sql
+   update public.profiles set role = 'owner' where email = 'your@email.com';
+   ```
+3. Run it. Reload the site. `/admin` now opens.
+
+After that, never do this again. Add and remove owners in **/admin/people**, which keeps a
+record of who changed what.
+
+---
+
+# 7. Put your real prints in
+
+Every product on the site right now is fake demo data with a grey "No photo" box. This is
+the biggest reason it does not look finished.
+
+1. Delete the demo products. Supabase, SQL Editor:
+   ```sql
+   delete from public.products where 'demo' = any(tags);
+   ```
+2. Go to `/admin/products` on your phone and add your real prints, with photos.
+3. Fill in `/admin/settings`: your WhatsApp number, the announcement line, and the three
+   quick replies.
+
+---
+
+# 8. Fill in the legal blanks
+
+`/privacy` and `/terms` each have a coloured box saying "To fill in before launch". They
+need your trading name, address, contact email, and whether you are VAT registered. I did
+not invent them.
+
+Edit `src/app/(site)/privacy/page.tsx` and `src/app/(site)/terms/page.tsx`, replace the
+`<Todo>...</Todo>` block with a normal paragraph.
+
+---
+
+# 9. Security settings that live in dashboards
+
+Quick, and worth doing:
+
+- **Supabase**: turn on two factor authentication on your account. Anyone who gets into
+  your Supabase account has every customer's details.
+- **GitHub**: same, turn on two factor.
+- **Supabase**, Authentication, Providers, Email: make sure **Confirm email** is on.
+- **Supabase**, Settings, Add-ons: turn on **daily backups**. Once you have real orders,
+  turn on Point in Time Recovery too.
+- **Vercel**, Settings, Deployment Protection: turn it on for Preview, so half finished
+  work is not public.
+
+The site sets no tracking cookies, so you do not need a cookie banner.
+
+---
+
+# 10. Things I could not finish, and why
+
+- **BOX NOW lockers**: needs a partner account you do not have. The code is written and
+  waiting; fill in the four `BOXNOW_` variables when you get credentials and it turns on.
+- **Card payments, cash on delivery, bank transfer**: you decided payment happens by
+  Revolut link in the chat. The groundwork for the others is in place if you change your
+  mind.
+- **Speed and accessibility scores**: I cannot measure these honestly from here, the
+  browser I use has no graphics. Open your live site in Chrome, press F12, **Lighthouse**
+  tab, choose Mobile, Analyse. Aim for 90+ on Performance and Accessibility.
+- **Owner alert when a message sits unread**: you get an email for every new order and
+  custom request. A "nobody replied in 15 minutes" reminder needs a scheduled job, which
+  is not built.
+
+---
+
+# 11. One command for me, when you are ready
+
+I rewrote the last 15 commit messages to remove the "Co-Authored-By: Claude" line you
+asked about, but a safety check stopped me pushing rewritten history. The commits are
+correct on your machine and I verified the files are byte for byte identical to before.
+To publish them, run this once:
+
+```bash
+cd /home/george/repos/peri3dprints/peri3dprints
+git push --force-with-lease origin main
 ```
 
-After that first one, promote and demote people only through `/admin/people`. It writes
-an audit row and refuses to demote the last owner, which the SQL above does not.
+If anything looks wrong afterwards, the old history is saved as a tag and this puts it
+back exactly:
 
-## 4. A domain, blocking
-
-You do not have one. Any registrar is fine. Once you own it:
-
-- Vercel > Project > Settings > Domains > add both `yourdomain.com` and `www.yourdomain.com`.
-- At the registrar, either add the records Vercel shows (`A @ 76.76.21.21` and
-  `CNAME www cname.vercel-dns.com`) or switch the nameservers to `ns1.vercel-dns.com` and
-  `ns2.vercel-dns.com`, which lets Vercel manage everything including wildcards.
-- Propagation is usually minutes, occasionally an hour.
-
-## 5. TLS certificate, not a task
-
-You do not buy or upload one. Vercel talks to Let's Encrypt for you over ACME the moment
-the DNS check passes, and renews it automatically. If the Domains page says the
-certificate is not issuing, the cause is nearly always a stale DNS record somewhere else
-(a CAA record, or an old `A` record still pointing at a previous host). The code already
-sends `Strict-Transport-Security` with `preload`, so once the domain has served HTTPS for
-a while you can submit it at hstspreload.org if you want browsers to refuse HTTP outright.
-
-## 6. Email through Resend, blocking for sign up at any volume
-
-Supabase's built in sender is rate limited to a couple of emails an hour and is not for
-production: confirmation and reset emails quietly stop arriving. This needs the domain
-from step 4 first.
-
-1. Resend > Domains > Add. Use a subdomain, `mail.yourdomain.com`, so the shop's
-   deliverability is separate from any personal mail on the root domain.
-2. Add the SPF, DKIM and MX records it gives you at your registrar. Verify.
-3. Resend > API Keys > create one with sending permission only.
-4. Supabase > Authentication > Emails > SMTP Settings > Enable Custom SMTP:
-   host `smtp.resend.com`, port `465`, username `resend`, password = the API key,
-   sender email = `orders@mail.yourdomain.com` (or similar), sender name = the shop.
-5. Resend > the domain > turn off click tracking, otherwise auth links get rewritten.
-6. Vercel env: `RESEND_API_KEY` = the key, `EMAIL_FROM` = `Peri 3D Prints
-   <orders@mail.yourdomain.com>`, `OWNER_EMAIL` = where you want new order and new message
-   alerts.
-
-Until this is done the app still works: emails are skipped and logged, never thrown.
-
-## 7. Vercel plan
-
-Hobby is free but its terms exclude commercial use. Budget for Pro at about $20 a month
-once the shop takes money.
-
-## 8. Fill in the legal gaps, blocking for launch
-
-`/privacy` and `/terms` each have one clearly marked box: trader name, trading address,
-contact email, and whether you are VAT registered. I did not invent them. Edit
-`src/app/(site)/privacy/page.tsx` and `src/app/(site)/terms/page.tsx`, replace the
-`<Todo>` block with a paragraph, and delete the import if it is no longer used.
-
-## 9. Photos, the biggest visual gap
-
-Every product currently shows a grey "No photo" square. The seed deliberately created no
-image rows, since pointing at storage objects that do not exist renders broken images.
-Upload through `/admin/products` on a phone, three photos per print, square framing.
-Delete the demo products first if you want a clean slate:
-
-```sql
-delete from public.products where 'demo' = any(tags);
+```bash
+git reset --hard backup-before-trailer-strip
+git push --force-with-lease origin main
 ```
 
-## 10. Settings, quick
-
-`/admin/settings`: your WhatsApp number (the chat and cart offer it as a fallback), the
-announcement strip, and the three canned replies.
-
-## 11. Things to check on a real phone
-
-Every screenshot in this build was headless Chrome at 390px and 1280px. That catches
-layout, not feel. Look at: the orange masthead and lime band in daylight, the carousel
-actually rotating and pausing when you touch it, and a chat reply appearing without a
-refresh (open the same thread as owner on one device and buyer on another).
-
-## 12. Security settings that live in dashboards, not code
-
-From Supabase's own production checklist, none of which the code can set:
-
-- Database > Settings: SSL enforcement on. Network restrictions if you can.
-- Authentication > Providers: email confirmations on, OTP expiry 3600 seconds or lower.
-- Authentication > Rate Limits: keep the defaults.
-- Your Supabase account and your GitHub account: turn on two factor authentication. An
-  attacker with either has the database.
-- Add a second organisation owner in Supabase so one lost login does not lock you out.
-- Settings > Add-ons: daily backups now, point in time recovery once orders exist.
-
-Vercel: enable Deployment Protection on preview URLs so half finished branches are not
-public. Nothing on the site sets a tracking cookie, so there is no consent banner to add.
-
-## 13. Not built, and why
-
-- **BOX NOW live** (stage 15): blocked on partner credentials that do not exist. The
-  provider is built against the real API shape and reports `not-configured` cleanly.
-  When you have them, fill the four `BOXNOW_*` variables and the locker flow turns on.
-- **Card, cash on delivery, bank transfer**: backlog by your decision. The
-  `PaymentMethod` interface and the enum values are in place, so each is an
-  implementation behind an existing seam, not a rewrite.
-- **Lighthouse numbers**: the plan asks for them on `/`, `/shop` and a product page.
-  Headless Chrome here has no compositor, so the scores it gives are not real. Run them
-  from Chrome DevTools on the live domain: Lighthouse > Mobile > Performance and
-  Accessibility, target 90 or above on both. The site is built for it (next/image with
-  sizes, no layout shift on the grid, self hosted fonts) but the numbers need a real run.
-- **Owner email when a message sits unread for 15 minutes**: the alert is sent on every
-  new custom request and every new order now. The 15 minute unread digest needs a
-  scheduled job; the cleanest home for it is a Vercel cron hitting a route that queries
-  `conversations where unread_for_owner and last_message_at < now() - 15 min`. Not built.
-
-## 14. Attribution note
-
-The commits from this session carry a `Co-Authored-By` trailer because the harness that
-ran me asked for it after the session started, which conflicts with CLAUDE.md section 9.
-They are all local and unpushed on `feat/complete-shop`, so if you would rather strip
-the trailers before they land on `main`, say so and I will redo the messages before
-merging. Nothing else about the history is affected.
+Once you are happy, delete the safety tag: `git tag -d backup-before-trailer-strip`

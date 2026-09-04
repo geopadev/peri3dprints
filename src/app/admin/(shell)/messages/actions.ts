@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/supabase/require-owner";
+import { siteOrigin } from "@/lib/site-origin";
 
 /** The owner's replies. Every one of these is owner only, twice: this guard,
  *  and RLS underneath it. */
@@ -133,7 +134,7 @@ export async function sendQuote(formData: FormData): Promise<void> {
     .single();
   if (error || !product) redirect(`/admin/messages/${conversationId}?error=failed`);
 
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const site = await siteOrigin();
   await supabase.from("messages").insert({
     conversation_id: conversationId,
     sender_id: user.id,

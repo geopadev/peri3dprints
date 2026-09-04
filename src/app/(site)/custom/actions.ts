@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { customRequestSchema } from "@/lib/validation/custom";
 import { sendOwnerNewMessage } from "@/lib/email";
+import { siteOrigin } from "@/lib/site-origin";
 
 export type CustomState = { status: "idle" } | { status: "error"; message: string };
 
@@ -89,7 +90,7 @@ export async function submitCustomRequest(
     attachments: d.references,
   });
 
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const site = await siteOrigin();
   await sendOwnerNewMessage({
     from: profile?.display_name ?? user.email ?? "Someone",
     preview: d.what.slice(0, 200),

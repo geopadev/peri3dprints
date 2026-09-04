@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
+import { siteOrigin } from "@/lib/site-origin";
 
-export default function robots(): MetadataRoute.Robots {
-  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const site = await siteOrigin();
   return {
     rules: [
       {

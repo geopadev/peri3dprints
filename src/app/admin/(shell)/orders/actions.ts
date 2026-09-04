@@ -8,6 +8,7 @@ import { sendOrderShipped } from "@/lib/email";
 import { trackingUrlFor } from "@/lib/shipping/manual";
 import { STATUS_STEPS } from "@/lib/orders";
 import type { Database, Json } from "@/lib/database.types";
+import { siteOrigin } from "@/lib/site-origin";
 
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 type Carrier = Database["public"]["Enums"]["carrier"];
@@ -79,7 +80,7 @@ export async function setStatus(formData: FormData): Promise<void> {
   await event(id, "status", { to: status, by: user.id, at: new Date().toISOString() });
 
   if (status === "shipped") {
-    const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+    const site = await siteOrigin();
     await sendOrderShipped({
       to: order.email,
       name: order.full_name,

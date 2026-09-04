@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { askToBuySchema } from "@/lib/validation/order";
 import { sendOwnerNewOrder, sendOrderConfirmed } from "@/lib/email";
+import { siteOrigin } from "@/lib/site-origin";
 
 export type PlaceOrderState =
   | { status: "idle" }
@@ -118,7 +119,7 @@ export async function placeOrder(
   }
 
   // Best effort: a failed email must never fail the order.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const siteUrl = await siteOrigin();
   const orderUrl = `${siteUrl}/order/${order.order_number}?t=${order.access_token}`;
   await Promise.allSettled([
     sendOrderConfirmed({

@@ -53,7 +53,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ? whatsappLink(settings.whatsappNumber, `Hi, I'm asking about ${product.title}: ${productUrl}`)
     : null;
 
-  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+  const site = await siteOrigin();
   const inStock = product.madeToOrder || (product.stockQty ?? 0) > 0;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -73,7 +73,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-10 px-5 py-8">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="grid gap-8 lg:grid-cols-2">
         <ProductGallery images={product.images} />
 
