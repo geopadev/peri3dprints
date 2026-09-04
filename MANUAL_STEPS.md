@@ -7,47 +7,29 @@ If you only do one thing today, do number 1. It is the bug you just hit.
 
 ---
 
-# 1. Fix the verification email going to localhost
+# 1. Fix the verification email going to localhost — done
 
-**The problem:** someone signs up, gets the email, clicks the link, and lands on
-`http://localhost:3000/...` which is a page on *their own computer*, so nothing happens.
+You did this. For the record, what it took:
 
-**Why:** two settings still say your site lives at localhost. One is in Vercel, one is in
-Supabase. I fixed the code so it stops trusting a stale localhost value, but Supabase has
-the final say on where that email link points, and only you can change it.
+- **Vercel**: `NEXT_PUBLIC_SITE_URL` replaced with `SITE_URL`, set to the real deployed
+  address, in Production.
+- **Supabase → Authentication → URL Configuration**: Site URL set to the same address,
+  and both that address and `http://localhost:3000` added under Redirect URLs.
+- A second, deeper bug found once the first fix was live: the confirmation link worked
+  from the *same* browser that signed up, but failed with an error in any other browser
+  or device, because it relied on a cookie only that first browser had. Fixed in code
+  (`src/app/auth/callback/route.ts` now accepts a `token_hash` link that needs no cookie),
+  plus two template edits in **Supabase → Authentication → Email Templates**: Confirm
+  signup and Reset Password both now link to `/auth/callback` with `token_hash` and
+  `type` rather than Supabase's default link shape.
+- Custom SMTP through Resend, using the `onboarding@resend.dev` test sender, which is
+  also what unblocked editing the templates in the first place (Supabase requires custom
+  SMTP configured before it lets a free tier project touch its email templates at all).
 
-### 1a. Vercel
-
-1. Go to https://vercel.com/dashboard and open the **peri3dprints** project.
-2. **Settings** (top tabs) then **Environment Variables** (left menu).
-3. Find `NEXT_PUBLIC_SITE_URL`. It probably says `http://localhost:3000`.
-4. **Delete it** and add a new one named `SITE_URL` instead. Vercel warns that the
-   `NEXT_PUBLIC_` prefix exposes a value to the browser, and nothing in the browser needs
-   this one. Dropping the prefix also means you can change it later without redeploying.
-5. Value: your real site address, the one in the browser when you visit the deployed site.
-   Looks like `https://peri3dprints.vercel.app`, no slash at the end.
-6. Tick **Production**. Save.
-
-   (If you would rather not touch it right now, the old name still works. The site will
-   not break either way.)
-
-### 1b. Supabase
-
-1. Go to https://supabase.com/dashboard and open your project.
-2. Left menu: **Authentication**, then **URL Configuration**.
-3. **Site URL**: put the same address, `https://peri3dprints.vercel.app`.
-4. **Redirect URLs**: click Add URL and add these two, one at a time:
-   - `https://peri3dprints.vercel.app/**`
-   - `http://localhost:3000/**`  (so signing up still works while you develop)
-5. Save.
-
-### 1c. Redeploy and test
-
-1. Back in Vercel, **Deployments** tab, the top one, three dots, **Redeploy**.
-2. When it finishes, open your site in a **private/incognito window**.
-3. Sign up with an email you can read. Click the link in the email.
-4. You should land on your real site, signed in. If it still says localhost, the Supabase
-   Site URL in step 1b did not save. That one is the one that matters most.
+**One thing to come back to**: `onboarding@resend.dev` can only deliver to the email
+address your Resend account itself is registered under. It is fine for testing, but real
+customers will not receive anything through it. Step 3 below is what replaces it, and it
+needs a domain first (step 4).
 
 ---
 
@@ -62,41 +44,38 @@ the shop is empty, every page errors. It paused twice while I was building.
 
 ---
 
-# 3. Send emails properly
+# 3. Move Resend onto your own domain
 
-**The problem:** right now Supabase sends the sign up emails itself, and it only allows a
-couple per hour before it silently stops. Real customers will not get their emails.
+You already have a Resend account and custom SMTP is already connected to Supabase, from
+step 1. This is the follow-up once you have a domain (step 4): swap the test sender for
+one on your own domain, so email actually reaches real customers instead of only your own
+Resend account address.
 
-You need a domain first (step 4), because email needs a domain to send from.
-
-Once you have one:
-
-1. Sign up at https://resend.com (free for 3,000 emails a month).
-2. **Domains** then **Add Domain**. Type `mail.yourdomain.com` (a subdomain, not the bare
-   domain).
-3. Resend shows you a list of DNS records. Go to wherever you bought the domain and add
+1. In Resend, **Domains** then **Add Domain**. Type `mail.yourdomain.com` (a subdomain,
+   not the bare domain).
+2. Resend shows you a list of DNS records. Go to wherever you bought the domain and add
    them exactly as shown. Then click **Verify** in Resend. It takes 5 to 10 minutes.
-4. In Resend, **API Keys**, **Create API Key**. Copy it, you only see it once.
-5. In Resend, open your domain settings and turn **click tracking off**. If it is on, it
-   rewrites the links in the sign up emails and they break.
-6. Back in Supabase: **Project Settings**, **Authentication**, scroll to **SMTP Settings**,
-   turn on **Enable Custom SMTP** and fill in:
-   - Host: `smtp.resend.com`
-   - Port: `465`
-   - Username: `resend`
-   - Password: the API key from step 4
-   - Sender email: `orders@mail.yourdomain.com`
-   - Sender name: `Peri 3D Prints`
-7. In Vercel, Environment Variables, add three:
-   - `RESEND_API_KEY` = the API key
+3. In Resend, open the new domain's settings and turn **click tracking off**. If it is on,
+   it rewrites the links in the sign up emails and they break.
+4. Back in Supabase: **Project Settings**, **Authentication**, **SMTP Settings**. The
+   host, port and username are already right (`smtp.resend.com`, `465`, `resend`).
+   Change:
+   - Sender email: `orders@mail.yourdomain.com` (was `onboarding@resend.dev`)
+   - Sender name: `Peri 3D Prints`, if it is not already.
+5. In Vercel, Environment Variables, add three:
+   - `RESEND_API_KEY` = the same API key you already created
    - `EMAIL_FROM` = `Peri 3D Prints <orders@mail.yourdomain.com>`
    - `OWNER_EMAIL` = your own email, where you want to hear about new orders
 
    None of these three need the `NEXT_PUBLIC_` prefix. They are secrets, and the browser
-   never sees them.
-8. Redeploy.
+   never sees them. These three are what the shop's own order and message emails read
+   from (`src/lib/email/`) — separate from the Supabase SMTP settings, which only cover
+   sign up and password reset.
+6. Redeploy.
 
-Until you do this the site still works. Order emails are just skipped, not broken.
+Until you do this, order and message emails are skipped rather than broken: the code
+checks for `RESEND_API_KEY` before trying to send, and logs instead of failing the order
+when it is missing.
 
 ---
 
