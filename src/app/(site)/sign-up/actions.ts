@@ -35,7 +35,11 @@ export async function signUp(_previous: SignUpState, formData: FormData): Promis
     password: parsed.data.password,
     options: {
       data: { display_name: parsed.data.display_name },
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      // A bare destination, not a pre-built callback URL: the Confirm signup
+      // template renders this as {{ .RedirectTo }} appended to its own
+      // token_hash link, and nesting a second query string inside that value
+      // would break it.
+      emailRedirectTo: `${origin}${next}`,
     },
   });
 

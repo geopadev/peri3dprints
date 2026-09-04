@@ -29,7 +29,8 @@ export async function resendConfirmation(
     type: "signup",
     email: email.data,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      // See sign-up/actions.ts: a bare destination, not a callback URL.
+      emailRedirectTo: `${origin}${next}`,
     },
   });
 

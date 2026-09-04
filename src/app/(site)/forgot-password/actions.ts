@@ -22,7 +22,8 @@ export async function requestPasswordReset(
   // Supabase does not error for an email with no account here either, which
   // is why the message below is the same regardless of what actually happened.
   await supabase.auth.resetPasswordForEmail(parsed.data, {
-    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+    // See sign-up/actions.ts: a bare destination, not a callback URL.
+    redirectTo: `${origin}/reset-password`,
   });
 
   return { status: "sent" };
