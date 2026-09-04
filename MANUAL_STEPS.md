@@ -83,33 +83,38 @@ when it is missing.
 
 ---
 
-# 4. Get a domain
+# 4. Get a domain — deferred on purpose
 
-You do not have one yet. Buy one anywhere (Namecheap, Cloudflare, GoDaddy). Something like
-`peri3dprints.com`.
+Skipped for now, by choice: running from the `.vercel.app` address and a QR code pointing
+at it instead. That address already has proper HTTPS, so nothing about security depends
+on owning a domain.
 
-Then:
+**One thing to remember for later**: if you buy a domain, the QR code has to be reprinted
+to point at it. Nothing switches over on its own, so an old code would keep sending
+people to the vercel.app address even after the domain is live.
 
-1. Vercel, your project, **Settings**, **Domains**, **Add**.
-2. Type your domain. Add `www.yourdomain.com` as well.
-3. Vercel shows you what to put at your registrar. Usually:
+When you do get one:
+
+1. Buy one anywhere (Namecheap, Cloudflare, GoDaddy). Something like `peri3dprints.com`.
+2. Vercel, your project, **Settings**, **Domains**, **Add**.
+3. Type your domain. Add `www.yourdomain.com` as well.
+4. Vercel shows you what to put at your registrar. Usually:
    - Type `A`, Name `@`, Value `76.76.21.21`
    - Type `CNAME`, Name `www`, Value `cname.vercel-dns.com`
-4. Add those where you bought the domain, under DNS settings.
-5. Wait. Usually minutes, sometimes an hour. Vercel will show **Valid Configuration**.
-6. **Then go back and redo step 1** with the real domain instead of the vercel.app one.
+5. Add those where you bought the domain, under DNS settings.
+6. Wait. Usually minutes, sometimes an hour. Vercel will show **Valid Configuration**.
+7. **Then go back and redo step 1** with the real domain instead of the vercel.app one.
    `SITE_URL` is read at runtime, so that one takes effect without a redeploy.
+8. Print a new QR code.
 
 ---
 
-# 5. The security certificate (https)
+# 5. The security certificate (https) — already covered
 
-**Nothing to do.** You do not buy one and you do not install one. The moment step 4 works,
-Vercel gets a free certificate from Let's Encrypt automatically and renews it forever. Your
-site will show the padlock on its own.
-
-If it does not appear after an hour, it is almost always an old DNS record left over from
-somewhere else. Vercel's Domains page will tell you which one.
+**Nothing to do, now or later.** Vercel issues a certificate for the `.vercel.app`
+address you are using today the same as it would for a custom domain, so this is not
+actually blocked on step 4. You do not buy one and you do not install one either way;
+Vercel gets it from Let's Encrypt automatically and renews it forever.
 
 ---
 
