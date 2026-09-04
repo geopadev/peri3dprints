@@ -10,6 +10,9 @@ import { PersonIcon } from "./person-icon";
 export type AccountMenuProps = {
   displayName: string | null;
   signOutAction: () => void | Promise<void>;
+  /** Unread conversations, shown against Messages so the count is where the
+   *  thing it counts is. */
+  unreadMessages?: number;
 };
 
 const ITEM = `flex min-h-11 items-center border-t-2 border-ink px-4 ${UTILITY_TEXT}`;
@@ -26,7 +29,7 @@ const ITEM = `flex min-h-11 items-center border-t-2 border-ink px-4 ${UTILITY_TE
  * the shop: home, categories, custom requests. Anything to do with the person
  * signed in belongs on the right, under this icon, where they will look for it.
  */
-export function AccountMenu({ displayName, signOutAction }: AccountMenuProps) {
+export function AccountMenu({ displayName, signOutAction, unreadMessages = 0 }: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -56,8 +59,17 @@ export function AccountMenu({ displayName, signOutAction }: AccountMenuProps) {
           <Link href="/orders" onClick={close} className={cn(ITEM, FOCUS_RING)}>
             Orders
           </Link>
-          <Link href="/messages" onClick={close} className={cn(ITEM, FOCUS_RING)}>
+          <Link
+            href="/messages"
+            onClick={close}
+            className={cn(ITEM, "justify-between gap-2", FOCUS_RING)}
+          >
             Messages
+            {unreadMessages > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-pill border-2 border-ink bg-offer px-1 font-mono text-[10px] leading-none text-ink">
+                {unreadMessages > 9 ? "9+" : unreadMessages}
+              </span>
+            )}
           </Link>
           <form action={signOutAction}>
             <button type="submit" className={cn(ITEM, "w-full cursor-pointer", FOCUS_RING)}>

@@ -1,5 +1,6 @@
 import { AdminNav } from "@/components/admin/admin-nav";
 import { requireOwner } from "@/lib/supabase/require-owner";
+import { getNotifications } from "@/lib/notifications";
 import { signOut } from "@/app/(site)/sign-in/actions";
 import { UTILITY_TEXT } from "@/components/ui/type";
 
@@ -9,10 +10,11 @@ import { UTILITY_TEXT } from "@/components/ui/type";
  */
 export default async function AdminShellLayout({ children }: { children: React.ReactNode }) {
   const user = await requireOwner();
+  const notifications = await getNotifications();
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <AdminNav />
+      <AdminNav notifications={notifications.items} />
 
       <div className="flex-1">{children}</div>
 

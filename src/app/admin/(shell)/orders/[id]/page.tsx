@@ -55,6 +55,12 @@ export default async function AdminOrderPage({
   ]);
   if (!order) notFound();
 
+  // Opening it is what marks it seen, the same way the message inbox works.
+  // Without this the badge would count every order ever placed, forever.
+  if (order.unread_for_owner) {
+    await supabase.from("orders").update({ unread_for_owner: false }).eq("id", id);
+  }
+
   const address = (order.shipping_address ?? null) as Record<string, unknown> | null;
   const addr = (k: string) =>
     address && typeof address[k] === "string" ? (address[k] as string) : "";

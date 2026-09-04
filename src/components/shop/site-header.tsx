@@ -4,9 +4,11 @@ import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories, getSettings } from "@/lib/products";
+import { getNotifications } from "@/lib/notifications";
 import { signOut } from "@/app/(site)/sign-in/actions";
 import { AccountMenu } from "./account-menu";
 import { CartTrigger } from "./cart-trigger";
+import { NotificationBell } from "./notification-bell";
 import { PersonIcon } from "./person-icon";
 import { SiteMenu } from "./site-menu";
 
@@ -32,13 +34,22 @@ export async function SiteHeader() {
   ] = await Promise.all([supabase.auth.getUser(), getSettings(), getCategories()]);
 
   let displayName: string | null = null;
+  let isOwner = false;
+  let notifications = {
+    items: [] as Awaited<ReturnType<typeof getNotifications>>["items"],
+    messageCount: 0,
+    total: 0,
+  };
+
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle();
+    const [{ data: profile }, { data: owner }, loaded] = await Promise.all([
+      supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+      supabase.rpc("is_owner"),
+      getNotifications(),
+    ]);
     displayName = profile?.display_name ?? user.email ?? null;
+    isOwner = owner === true;
+    notifications = loaded;
   }
 
   return (
@@ -51,7 +62,7 @@ export async function SiteHeader() {
             sits flush against the edge on every other size. */}
         <div className="flex min-w-0 items-center gap-2">
           <div className="sm:hidden">
-            <SiteMenu categories={categories} />
+            <SiteMenu categories={categories} isOwner={isOwner} />
           </div>
 
           <Link
@@ -90,10 +101,16 @@ export async function SiteHeader() {
             </form>
           </details>
 
+          {user && <NotificationBell items={notifications.items} />}
+
           <CartTrigger whatsappNumber={settings.whatsappNumber} />
 
           {user ? (
-            <AccountMenu displayName={displayName} signOutAction={signOut} />
+            <AccountMenu
+              displayName={displayName}
+              signOutAction={signOut}
+              unreadMessages={notifications.messageCount}
+            />
           ) : (
             <>
               {/* Same slot, same icon as the account menu it becomes once

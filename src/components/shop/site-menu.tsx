@@ -9,6 +9,10 @@ import { cn } from "@/lib/cn";
 
 export type SiteMenuProps = {
   categories: { slug: string; name: string }[];
+  /** Owners get a way into the admin from here. Decided on the server, so it
+   *  is a convenience for someone who already has access rather than a hint
+   *  to anyone who does not: every admin route still checks for itself. */
+  isOwner?: boolean;
 };
 
 const LINK = `flex min-h-12 items-center border-b-2 border-ink px-5 ${UTILITY_TEXT}`;
@@ -28,7 +32,7 @@ const SECTION = "px-5 pt-5 pb-2 font-mono text-xs tracking-utility text-ink-soft
  * CLAUDE.md section 3 names exactly three places motion lives and a drawer is
  * not one of them.
  */
-export function SiteMenu({ categories }: SiteMenuProps) {
+export function SiteMenu({ categories, isOwner = false }: SiteMenuProps) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -89,6 +93,15 @@ export function SiteMenu({ categories }: SiteMenuProps) {
                     {category.name}
                   </Link>
                 ))}
+              </>
+            )}
+
+            {isOwner && (
+              <>
+                <p className={SECTION}>Shop admin</p>
+                <Link href="/admin" onClick={close} className={cn(LINK, FOCUS_RING)}>
+                  Open the admin
+                </Link>
               </>
             )}
 

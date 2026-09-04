@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { UTILITY_TEXT } from "@/components/ui/type";
+import { NotificationBell } from "@/components/shop/notification-bell";
+import type { NotificationItem } from "@/lib/notifications";
 
 const LINKS = [
   { href: "/admin", label: "Today" },
@@ -20,19 +22,20 @@ const LINKS = [
  * Sticks to the bottom on a phone, because that is where a thumb is when he is
  * holding it one handed behind a market table. Moves to the top on wider screens.
  */
-export function AdminNav() {
+export function AdminNav({ notifications = [] }: { notifications?: NotificationItem[] }) {
   const pathname = usePathname();
+  const unreadMessages = notifications.filter((n) => n.kind === "message").length;
 
   return (
     <nav
       aria-label="Admin"
-      className="sticky bottom-0 z-30 order-last border-t-2 border-ink bg-surface sm:top-0 sm:bottom-auto sm:order-first sm:border-t-0 sm:border-b-2"
+      className="sticky bottom-0 z-30 order-last flex items-center border-t-2 border-ink bg-surface sm:top-0 sm:bottom-auto sm:order-first sm:border-t-0 sm:border-b-2"
     >
       {/* Scrolls sideways rather than squeezing. Six equal flex items ran
           "Settings" off the edge of a 390px phone, which silently loses him a
           whole section on exactly the device this nav is built for. Items keep
           their own width and the row scrolls if it has to. */}
-      <ul className="mx-auto flex max-w-5xl overflow-x-auto">
+      <ul className="flex min-w-0 flex-1 overflow-x-auto">
         {LINKS.map((link) => {
           const active =
             link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
@@ -49,11 +52,20 @@ export function AdminNav() {
                 )}
               >
                 {link.label}
+                {link.href === "/admin/messages" && unreadMessages > 0 && (
+                  <span className="ml-2 flex h-5 min-w-5 items-center justify-center rounded-pill border-2 border-ink bg-offer px-1 font-mono text-[10px] leading-none text-ink">
+                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                  </span>
+                )}
               </Link>
             </li>
           );
         })}
       </ul>
+
+      <div className="flex shrink-0 items-center border-l-2 border-ink pl-1">
+        <NotificationBell items={notifications} />
+      </div>
     </nav>
   );
 }

@@ -298,6 +298,7 @@ export type Database = {
           tracking_number: string | null
           tracking_url: string | null
           unread_for_buyer: boolean
+          unread_for_owner: boolean
           updated_at: string | null
         }
         Insert: {
@@ -327,6 +328,7 @@ export type Database = {
           tracking_number?: string | null
           tracking_url?: string | null
           unread_for_buyer?: boolean
+          unread_for_owner?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -356,6 +358,7 @@ export type Database = {
           tracking_number?: string | null
           tracking_url?: string | null
           unread_for_buyer?: boolean
+          unread_for_owner?: boolean
           updated_at?: string | null
         }
         Relationships: [
