@@ -30,7 +30,7 @@ export async function signUp(_previous: SignUpState, formData: FormData): Promis
   const supabase = await createClient();
   const origin = await siteOrigin();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -48,6 +48,21 @@ export async function signUp(_previous: SignUpState, formData: FormData): Promis
       status: "error",
       message: "Could not create that account just now. Try again in a moment.",
     };
+  }
+
+  /*
+    A session here means email confirmation is switched off in the Supabase
+    dashboard, so signUp() signed them in there and then and there is no email
+    coming. Sending them to "check your inbox" in that case would leave them
+    staring at a page waiting for something that will never arrive, while
+    already being signed in.
+
+    Only a genuinely new signup with confirmation off produces a session, so
+    reading it gives nothing away: every other case, including an email that
+    already has an account, still falls through to the same page below.
+  */
+  if (data.session) {
+    redirect(next);
   }
 
   // With confirmation required, Supabase never errors here for an email that
