@@ -33,6 +33,19 @@ Status is one of: not started, in progress, blocked, done.
 
 Dated, newest first. Each was reported by the owner using the live site.
 
+- 2026-09-05, fix/stall-scan-count: the ?s=stall marker from the last poster
+  change did nothing. Checked against Vercel's docs: the free plan's Pages
+  panel groups page views by path with the query string stripped, so every
+  scan silently merged into the same row as every other homepage visit. UTM
+  parameters and custom events would both distinguish it, but both are Pro
+  only. Fixed with a real route, /stall, that renders long enough for the
+  page view to fire then redirects client side; a server side redirect would
+  3xx before the analytics script ever runs and nothing would be recorded.
+  The count is now literally the Pages panel's number for /stall, free,
+  built in, nothing to configure. Verified the compiled chunk actually ships
+  the timer and the replace call, and that /stall answers 200 rather than a
+  3xx. NOT verified: an actual page view landing in the real Vercel dashboard,
+  which needs a live deploy and a real visit to check.
 - 2026-09-05, feat/poster-three-languages: the poster says its line in
   English, Greek and Hebrew, one editable field each, Hebrew drawn right to
   left. None of the shop's three faces carry Greek or Hebrew (checked against
