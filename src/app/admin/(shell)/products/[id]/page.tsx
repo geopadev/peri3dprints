@@ -33,7 +33,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     supabase
       .from("products")
       .select(
-        "*, product_images(id, storage_path, alt_text, position), product_variants(id, option_label, name, swatch_hex, price_delta_cents, stock_qty, sku, position)",
+        "*, product_images(id, storage_path, alt_text, position, kind), product_variants(id, option_label, name, swatch_hex, price_delta_cents, stock_qty, sku, position)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -69,6 +69,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       .map((image, index) => ({
         id: image.id,
         storage_path: image.storage_path,
+        kind: image.kind === "video" ? ("video" as const) : ("image" as const),
         alt_text: image.alt_text,
         position: index,
       })),

@@ -63,15 +63,21 @@ export const slugSchema = z
 
 export const productStatusSchema = z.enum(["draft", "active", "archived"]);
 
+export const productMediaKindSchema = z.enum(["image", "video"]);
+export type ProductMediaKind = z.infer<typeof productMediaKindSchema>;
+
 export const productImageSchema = z.object({
   id: optionalText,
   storage_path: z.string().trim().min(1),
+  /** Photos and videos share this list and its ordering. Defaults to image so
+   *  a row written before videos existed still parses. */
+  kind: productMediaKindSchema.default("image"),
   // Required, because CLAUDE.md section 8 says every image carries real alt text.
   alt_text: z
     .string()
     .trim()
-    .min(1, "Describe the photo so it works for screen readers and search.")
-    .max(200, "Keep alt text short."),
+    .min(1, "Describe what is in it, for screen readers and search.")
+    .max(200, "Keep the description short."),
   position: z.number().int().min(0),
 });
 
@@ -135,9 +141,20 @@ export const productSchema = z
       message: "The old price has to be higher than the price you are selling at.",
     },
   )
-  .refine((product) => product.status !== "active" || product.images.length > 0, {
+  .refine(
+    (product) =>
+      product.status !== "active" || product.images.some((item) => item.kind === "image"),
+    {
+      path: ["images"],
+      message: "Add at least one photo before putting it on the shelf.",
+    },
+  )
+  // The card in the shop shows whatever is first, and a card does not play
+  // video. The database refuses this too, but that comes back as a bare
+  // error, and this comes back as a sentence next to the list.
+  .refine((product) => product.images.length === 0 || product.images[0]?.kind === "image", {
     path: ["images"],
-    message: "Add at least one photo before putting it on the shelf.",
+    message: "A video cannot be first. Put a photo at the top and it becomes the cover.",
   });
 
 export type ProductInput = z.infer<typeof productSchema>;

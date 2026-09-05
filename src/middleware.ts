@@ -58,6 +58,9 @@ function buildCsp(nonce: string): string {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' blob: data: ${supabase}`,
+    // Product videos play straight from the bucket. Without this, default-src
+    // 'self' blocks them and the gallery shows a dead player.
+    `media-src 'self' ${supabase}`,
     "font-src 'self'",
     `connect-src 'self' ${supabase} ${supabaseWs}${isDev ? " ws://localhost:* http://localhost:*" : ""}`,
     "object-src 'none'",

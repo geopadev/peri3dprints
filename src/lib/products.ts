@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { ProductMediaKind } from "@/lib/validation/product";
 
 export type ProductSpec = {
   material: string | null;
@@ -19,6 +20,7 @@ export type ProductCardData = {
   stockQty: number | null;
   madeToOrder: boolean;
   spec: ProductSpec;
+  /** Always a photo. A video is never the cover, however the list is ordered. */
   cover: { storagePath: string; altText: string } | null;
 };
 
@@ -37,11 +39,13 @@ type CardRow = {
   height_mm: number | null;
   print_minutes: number | null;
   spec_note: string | null;
-  product_images: { storage_path: string; alt_text: string; position: number | null }[] | null;
+  product_images:
+    | { storage_path: string; alt_text: string; position: number | null; kind: string }[]
+    | null;
 };
 
 const CARD_FIELDS =
-  "id, slug, title, price_cents, compare_at_cents, stock_qty, made_to_order, material, weight_grams, length_mm, width_mm, height_mm, print_minutes, spec_note, product_images(storage_path, alt_text, position)";
+  "id, slug, title, price_cents, compare_at_cents, stock_qty, made_to_order, material, weight_grams, length_mm, width_mm, height_mm, print_minutes, spec_note, product_images(storage_path, alt_text, position, kind)";
 
 function toSpec(row: CardRow): ProductSpec {
   const hasDims = row.length_mm && row.width_mm && row.height_mm;
@@ -58,7 +62,7 @@ function toCardData(row: CardRow): ProductCardData {
   const images = [...(row.product_images ?? [])].sort(
     (a, b) => (a.position ?? 0) - (b.position ?? 0),
   );
-  const first = images[0];
+  const first = images.find((item) => item.kind !== "video");
 
   return {
     id: row.id,
@@ -191,7 +195,8 @@ export type ProductDetail = {
   stockQty: number | null;
   spec: ProductSpec;
   categoryId: string | null;
-  images: { storagePath: string; altText: string }[];
+  /** Photos and videos, in the owner's order. The first one is always a photo. */
+  images: { storagePath: string; altText: string; kind: ProductMediaKind }[];
   variants: ProductVariantData[];
 };
 
@@ -204,7 +209,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
        made_to_order, lead_time_days, stock_qty,
        material, weight_grams, length_mm, width_mm, height_mm, print_minutes, spec_note,
        category_id,
-       product_images(storage_path, alt_text, position),
+       product_images(storage_path, alt_text, position, kind),
        product_variants(id, name, swatch_hex, price_delta_cents, stock_qty, position)`,
     )
     .eq("slug", slug)
@@ -241,7 +246,11 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     stockQty: data.stock_qty,
     spec: toSpec(data as unknown as CardRow),
     categoryId: data.category_id,
-    images: images.map((image) => ({ storagePath: image.storage_path, altText: image.alt_text })),
+    images: images.map((image) => ({
+      storagePath: image.storage_path,
+      altText: image.alt_text,
+      kind: image.kind === "video" ? "video" : "image",
+    })),
     variants: variants.map((variant) => ({
       id: variant.id,
       name: variant.name,

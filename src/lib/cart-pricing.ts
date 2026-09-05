@@ -63,7 +63,7 @@ export async function priceCartLines(cartLines: CartLine[]): Promise<PricedCart>
   const { data: products } = await supabase
     .from("products")
     .select(
-      "id, slug, title, status, price_cents, weight_grams, made_to_order, stock_qty, product_images(storage_path, alt_text, position), product_variants(id, name, price_delta_cents, stock_qty)",
+      "id, slug, title, status, price_cents, weight_grams, made_to_order, stock_qty, product_images(storage_path, alt_text, position, kind), product_variants(id, name, price_delta_cents, stock_qty)",
     )
     .in("id", productIds);
 
@@ -130,9 +130,10 @@ export async function priceCartLines(cartLines: CartLine[]): Promise<PricedCart>
       });
     }
 
-    const cover = [...(product.product_images ?? [])].sort(
-      (a, b) => (a.position ?? 0) - (b.position ?? 0),
-    )[0];
+    // The first photo, never a video: a cart line shows a picture.
+    const cover = [...(product.product_images ?? [])]
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .find((item) => item.kind !== "video");
 
     const unitPriceCents = product.price_cents + (variant?.price_delta_cents ?? 0);
 

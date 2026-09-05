@@ -378,6 +378,7 @@ export type Database = {
         Row: {
           alt_text: string
           id: string
+          kind: string
           position: number | null
           product_id: string
           storage_path: string
@@ -385,6 +386,7 @@ export type Database = {
         Insert: {
           alt_text: string
           id?: string
+          kind?: string
           position?: number | null
           product_id: string
           storage_path: string
@@ -392,6 +394,7 @@ export type Database = {
         Update: {
           alt_text?: string
           id?: string
+          kind?: string
           position?: number | null
           product_id?: string
           storage_path?: string

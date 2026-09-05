@@ -1,23 +1,27 @@
 import { supabaseUrl } from "@/lib/supabase/config";
 
 export const PRODUCT_IMAGES_BUCKET = "product-images";
+export const PRODUCT_VIDEOS_BUCKET = "product-videos";
 
 /**
- * Public URL for an object in the product-images bucket. The bucket is public,
- * so this needs no signing.
+ * Public URL for an object in a public bucket. No signing needed.
  *
- * This used to ask Supabase to resize the image, which returned 403
- * FeatureNotEnabled on every request: image transforms are a paid Supabase
- * feature and this project is on the free plan, so every product photo on the
- * site was broken.
- *
- * Nothing was lost by dropping it. Every place that renders one of these goes
- * through next/image, which resizes and re-encodes on its own from the `sizes`
- * it is already given, so the resizing still happens, just one layer up. The
- * two callers that are not next/image, the Open Graph tag and the JSON-LD
- * product image, want the full size original anyway.
+ * Photos go through next/image, which resizes and re-encodes from the `sizes`
+ * each caller already gives it. They used to go through Supabase image
+ * transforms instead, which is a paid feature: on the free plan every one of
+ * those URLs answered 403 and the shop showed empty boxes. Do not bring the
+ * render endpoint back.
  */
-export function productImageUrl(storagePath: string): string {
+function publicObjectUrl(bucket: string, storagePath: string): string {
   const base = supabaseUrl().replace(/\/$/, "");
-  return `${base}/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/${storagePath}`;
+  return `${base}/storage/v1/object/public/${bucket}/${storagePath}`;
+}
+
+export function productImageUrl(storagePath: string): string {
+  return publicObjectUrl(PRODUCT_IMAGES_BUCKET, storagePath);
+}
+
+/** Videos are served as they were uploaded. Nothing resizes them. */
+export function productVideoUrl(storagePath: string): string {
+  return publicObjectUrl(PRODUCT_VIDEOS_BUCKET, storagePath);
 }

@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!product) return {};
 
   const description = product.shortDescription ?? product.description ?? undefined;
-  const cover = product.images[0];
+  const cover = product.images.find((item) => item.kind === "image");
 
   return {
     title: product.title,
@@ -61,7 +61,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     name: product.title,
     description: product.shortDescription ?? product.description ?? undefined,
     sku: product.slug,
-    image: product.images.map((image) => productImageUrl(image.storagePath)),
+    image: product.images
+      .filter((item) => item.kind === "image")
+      .map((image) => productImageUrl(image.storagePath)),
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",

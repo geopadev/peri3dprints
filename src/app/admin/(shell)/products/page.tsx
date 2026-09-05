@@ -36,7 +36,7 @@ export default async function AdminProductsPage({
   let query = supabase
     .from("products")
     .select(
-      "id, title, slug, price_cents, status, stock_qty, made_to_order, product_images(storage_path, alt_text, position)",
+      "id, title, slug, price_cents, status, stock_qty, made_to_order, product_images(storage_path, alt_text, position, kind)",
     )
     .order("created_at", { ascending: false })
     .limit(100);
@@ -90,9 +90,10 @@ export default async function AdminProductsPage({
       <ul className="flex flex-col gap-3">
         {products.map((product) => {
           // position is nullable in the schema, so treat a missing one as first.
-          const cover = [...(product.product_images ?? [])].sort(
-            (a, b) => (a.position ?? 0) - (b.position ?? 0),
-          )[0];
+          // And the first photo, never a video: this is a thumbnail.
+          const cover = [...(product.product_images ?? [])]
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            .find((item) => item.kind !== "video");
 
           return (
             <li key={product.id}>

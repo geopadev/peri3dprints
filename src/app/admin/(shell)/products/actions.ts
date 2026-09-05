@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOwner } from "@/lib/supabase/require-owner";
-import { PRODUCT_IMAGES_BUCKET } from "@/lib/product-image-url";
+import { PRODUCT_IMAGES_BUCKET, PRODUCT_VIDEOS_BUCKET } from "@/lib/product-image-url";
 import { productSchema, slugSchema, type ProductInput } from "@/lib/validation/product";
 
 export type SaveResult =
@@ -22,6 +22,17 @@ async function slugTaken(slug: string, ignoreId: string | null): Promise<boolean
   if (ignoreId) query = query.neq("id", ignoreId);
   const { data } = await query;
   return (data?.length ?? 0) > 0;
+}
+
+/** Photos and videos live in different buckets, so a removal splits by kind. */
+async function removeMedia(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  files: { storage_path: string; kind: string }[],
+) {
+  const photos = files.filter((file) => file.kind !== "video").map((file) => file.storage_path);
+  const videos = files.filter((file) => file.kind === "video").map((file) => file.storage_path);
+  if (photos.length > 0) await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(photos);
+  if (videos.length > 0) await supabase.storage.from(PRODUCT_VIDEOS_BUCKET).remove(videos);
 }
 
 function firstFieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
@@ -94,31 +105,35 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
   // more ways to end up with a gap in the positions.
   const { data: existingImages } = await supabase
     .from("product_images")
-    .select("id, storage_path")
+    .select("id, storage_path, kind")
     .eq("product_id", productId);
 
   const keptPaths = new Set(product.images.map((image) => image.storage_path));
-  const orphanPaths = (existingImages ?? [])
-    .filter((image) => !keptPaths.has(image.storage_path))
-    .map((image) => image.storage_path);
+  const orphans = (existingImages ?? []).filter((image) => !keptPaths.has(image.storage_path));
 
   await supabase.from("product_images").delete().eq("product_id", productId);
   if (product.images.length > 0) {
-    await supabase.from("product_images").insert(
+    const { error: mediaError } = await supabase.from("product_images").insert(
       product.images.map((image, index) => ({
         product_id: productId,
         storage_path: image.storage_path,
+        kind: image.kind,
         alt_text: image.alt_text,
         position: index,
       })),
     );
+    if (mediaError) {
+      return {
+        status: "error",
+        message: "The product saved but its photos and videos did not. Check the list and save again.",
+        fieldErrors: { images: mediaError.message },
+      };
+    }
   }
 
-  // Drop the files the owner removed, so the bucket does not fill up with
+  // Drop the files the owner removed, so the buckets do not fill up with
   // orphans nobody can see.
-  if (orphanPaths.length > 0) {
-    await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(orphanPaths);
-  }
+  if (orphans.length > 0) await removeMedia(supabase, orphans);
 
   await supabase.from("product_variants").delete().eq("product_id", productId);
   if (product.variants.length > 0) {
@@ -155,18 +170,15 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   const supabase = await createClient();
 
   // Collect the storage paths before the cascade removes the rows that name them.
-  const { data: images } = await supabase
+  const { data: media } = await supabase
     .from("product_images")
-    .select("storage_path")
+    .select("storage_path, kind")
     .eq("product_id", id);
 
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return;
 
-  const paths = (images ?? []).map((image) => image.storage_path);
-  if (paths.length > 0) {
-    await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(paths);
-  }
+  if (media && media.length > 0) await removeMedia(supabase, media);
 
   revalidatePath("/admin/products");
   redirect("/admin/products");
