@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/safe-next";
 import { sendMessageSchema, startConversationSchema } from "@/lib/validation/chat";
 
 /**
@@ -21,7 +22,11 @@ async function requireBuyer(next: string) {
 }
 
 export async function startConversation(formData: FormData): Promise<void> {
-  const { supabase, user } = await requireBuyer("/messages");
+  // Where to land after signing in. The product page passes itself, so "Ask
+  // about this" brings the visitor back to the print they were asking about
+  // rather than to a bare inbox.
+  const next = safeNext(String(formData.get("next") ?? ""), "/messages");
+  const { supabase, user } = await requireBuyer(next);
 
   const parsed = startConversationSchema.safeParse({
     body: String(formData.get("body") ?? ""),
@@ -32,6 +37,34 @@ export async function startConversation(formData: FormData): Promise<void> {
   if (!parsed.success) redirect("/messages?error=empty");
 
   const { body, productId, subject } = parsed.data;
+
+  // One thread per print per person. Asking twice about the same product
+  // continues the conversation rather than opening a second one the owner
+  // would have to answer in two places.
+  if (productId) {
+    const { data: existing } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("buyer_id", user.id)
+      .eq("product_id", productId)
+      .neq("status", "closed")
+      .order("last_message_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase.from("messages").insert({
+        conversation_id: existing.id,
+        sender_id: user.id,
+        sender_role: "buyer",
+        kind: "text",
+        body,
+      });
+      if (error) redirect("/messages?error=failed");
+      revalidatePath("/messages");
+      redirect(`/messages/${existing.id}`);
+    }
+  }
 
   // Display name and email come from the account, so the starter form never
   // asks for them again.

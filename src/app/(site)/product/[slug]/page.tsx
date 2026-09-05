@@ -96,6 +96,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <ProductPurchasePanel
             productId={product.id}
+            productSlug={product.slug}
+            productTitle={product.title}
             priceCents={product.priceCents}
             compareAtCents={product.compareAtCents}
             variants={product.variants}

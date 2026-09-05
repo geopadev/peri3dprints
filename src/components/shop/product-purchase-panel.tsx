@@ -7,9 +7,12 @@ import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
 import { useCart } from "@/hooks/use-cart";
 import type { ProductVariantData } from "@/lib/products";
+import { AskAboutDialog } from "./ask-about-dialog";
 
 export type ProductPurchasePanelProps = {
   productId: string;
+  productSlug: string;
+  productTitle: string;
   priceCents: number;
   /** Only ever set when it is above priceCents. */
   compareAtCents: number | null;
@@ -36,6 +39,8 @@ function stockLine(
 
 export function ProductPurchasePanel({
   productId,
+  productSlug,
+  productTitle,
   priceCents,
   compareAtCents,
   variants,
@@ -136,11 +141,12 @@ export function ProductPurchasePanel({
                 ? `All ${availableStock} in your cart`
                 : "Add to cart"}
           </Button>
-          {/* Ask about this stays disabled: chat is stage 11 and does not
-              exist yet. WhatsApp underneath is what actually works today. */}
-          <Button variant="secondary" disabled>
-            Ask about this
-          </Button>
+          <AskAboutDialog
+            productId={productId}
+            productTitle={productTitle}
+            productSlug={productSlug}
+            whatsappHref={whatsappHref}
+          />
         </div>
 
         {added && (
@@ -153,27 +159,6 @@ export function ProductPurchasePanel({
           </p>
         )}
 
-        {/* The trailing word has to live inside each branch. Shared, it read
-            "Message me directly for now. instead." whenever no WhatsApp number
-            was set. */}
-        <p className="text-sm">
-          Chat is not open yet.{" "}
-          {whatsappHref ? (
-            <>
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold underline"
-              >
-                Message me on WhatsApp
-              </a>{" "}
-              instead.
-            </>
-          ) : (
-            "Message me directly for now."
-          )}
-        </p>
       </div>
     </div>
   );
