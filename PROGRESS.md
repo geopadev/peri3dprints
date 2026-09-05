@@ -1,7 +1,7 @@
 # Progress
 
-Last updated: 2026-09-04
-Current stage: 14 done, 15 blocked
+Last updated: 2026-09-05
+Current stage: 14 done, 15 blocked, fixes ongoing
 Current branch: main
 
 ## Ledger
@@ -13,7 +13,7 @@ Current branch: main
 | 3     | Database schema                   | done        | feat/db-schema                          | Verified 2026-08-06: both migrations on disk.                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 4     | Supabase wiring and owner auth    | done        | feat/auth                               | Verified 2026-08-06: 3 migrations applied to dev, types 794 lines, `/admin` 307s to `/admin/login`, `server-only` guard present.                                                                                                                                                                                                                                                                                                                 |
 | 4b    | Real buyer accounts               | blocked     | feat/buyer-accounts                     | Mostly verified 2026-08-07 on the real dev project: sign up, email confirmation, sign in and the owner path into `/admin` all work end to end. Still NOT done: the "not the shop owner" page for a signed in non owner is untested, and the "Ask to buy" round trip has never been clicked through. See Blockers.                                                                                                                                |
-| 5     | Admin product management          | blocked     | feat/admin-products                     | A real product was created through the UI 2026-08-07 and round trips: every spec field, the category link, the variant and the photo all persisted, and the photo is genuinely in Storage. Required a bug fix first, see Decisions. Still NOT done: only one photo was used, so multi-image reorder and cover selection are untested, and the 390px pass has not been confirmed.                                                                 |
+| 5     | Admin product management          | blocked     | feat/admin-products                     | A real product was created through the UI 2026-08-07 and round trips: every spec field, the category link, the variant and the photo all persisted, and the photo is genuinely in Storage. Required a bug fix first, see Decisions. The owner tried several photos on a phone 2026-09-05 and got one: the file input forced the camera, and a batch upload kept only the last file (stale closure). Both fixed on fix/admin-photos-menu-stats. Multi-photo upload, reorder and cover selection are still NOT verified on a phone, only the fix is.                                                                 |
 | 5b    | People and roles                  | done        | feat/team-access                        | Verified 2026-08-20 against the dev project. The escalation was proven exploitable first (a customer set role=owner and is_owner() returned true), then proven refused: direct update 42501, non-owner RPC 42501. Owner promote works, demote works once a second owner exists, last owner refused, ordinary profile edits still work, audit rows written.                                                                                                                                                                                                                                                                                                     |
 | 6     | Public catalogue and product page | done        | feat/storefront                         | Verified 2026-08-07 against the real dev project: a seeded active product showed on `/` and `/product/[slug]` with correct OG tags, a seeded draft did not and 404s directly. Category filter, search, sort and in-stock filter all checked with curl. Deliberate deviations recorded under Decisions.                                                                                                                                           |
 | 7     | Cart                              | blocked     | feat/cart                               | Code complete and merged 2026-08-07. Two of three exit checks verified against the real dev project: pricing comes only from the database, and archiving a product live during a test removed it from a priced cart with an explanation. NOT marked done: "cart survives a reload" is client-only, browser-local behaviour (localStorage) with no server surface to curl, so it is unverified by direct test, only by code review. See Blockers. |
@@ -28,6 +28,26 @@ Current branch: main
 | 15    | BOX NOW go-live                   | blocked     |                                         | waiting on partner credentials                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 Status is one of: not started, in progress, blocked, done.
+
+## Fixes after the stages
+
+Dated, newest first. Each was reported by the owner using the live site.
+
+- 2026-09-05, fix/admin-photos-menu-stats: dashboard "Messages" counted
+  unread_for_owner, which clears on opening a thread, so two open questions
+  showed as 0. conversations.last_sender_role added and kept by the message
+  trigger; the card counts not-closed threads whose last word was the buyer's.
+  Verified on the new build as a throwaway owner over real RLS: 2. Same branch:
+  admin link moved from the drawer to the account menu, photo picker no longer
+  forces the camera, batch uploads keep every file.
+- 2026-09-05, fix/product-images-not-showing: every product photo 403'd because
+  productImageUrl used the Supabase render endpoint, a paid feature. Plain
+  object URLs now, next/image resizes. Verified the optimiser returns the real
+  photos. CLAUDE.md section 8 corrected.
+- 2026-09-04, main: notification bell with unread badges, owner written order
+  updates with buyer email and /orders page, sign in straight after signup
+  when confirmation is off, PKCE replaced by token_hash for cross device
+  confirmation links.
 
 ## Blockers
 
@@ -207,10 +227,12 @@ of this session, because that is exactly who reads it.
 - An owner account exists and works: `g.papageorgiou005@gmail.com`, promoted
   2026-08-07, confirmed reaching `/admin` in a browser. Nothing is blocked on
   authentication any more.
-- The single highest value thing left is stage 5's exit check, which is now
-  runnable and has never been run: create a print through `/admin/products/new`
-  with three photos, a variant and full spec fields, save it, reload, and
-  confirm everything round trips. Do it at 390px, since that is the viewport
+- The single highest value thing left is stage 5's exit check, which has
+  still never fully passed: create a print through `/admin/products/new`
+  with three photos in one go, a variant and full spec fields, save it,
+  reload, and confirm everything round trips. Two bugs in exactly this path
+  were fixed 2026-09-05 (camera forced, batch kept one file); the fix has
+  been read but not tapped through on a phone. Do it at 390px, since that is the viewport
   the admin was designed for. This is also the first time photo upload will
   touch real Supabase Storage, so it is the most likely place to find a bug.
 - Doing that also fixes the storefront being empty: there are currently zero
