@@ -220,8 +220,11 @@ Not optional, do not announce it in the UI.
 - Keyboard reachable dialogs with focus trapping (Radix handles this, do not roll your own).
 - Contrast: `--flame` on white fails at small sizes. Use `--flame` as a background with `--ink`
   text on top, or `--ink` text on a `--flame` border.
-- Images through `next/image` with explicit `sizes`. Product images stored at 1600px max and
-  served through Supabase image transforms.
+- Images through `next/image` with explicit `sizes`, which is what does the resizing. Product
+  images are capped at 1600px on the longest edge in the browser before upload. Do not use
+  Supabase image transforms (`/storage/v1/render/image/...`): they are a paid Supabase feature
+  and this project is on the free plan, so every one of those URLs returns 403 and the photo
+  does not appear. Link to the plain public object URL and let `next/image` do the rest.
 - Target: Lighthouse mobile performance 90+, no layout shift on the catalogue grid.
 
 ### 9. Git and commits
