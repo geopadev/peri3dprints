@@ -33,6 +33,17 @@ Status is one of: not started, in progress, blocked, done.
 
 Dated, newest first. Each was reported by the owner using the live site.
 
+- 2026-09-05, feat/product-videos-and-crop: three asks from the owner. Videos
+  on products: product_images.kind, a product-videos bucket (50 MB, video/*),
+  a trigger that refuses a video at position 0, every cover query picks the
+  first photo, the gallery plays video whole on ink, CSP media-src added.
+  Photo fitting at upload: canvas cropper (drag, pinch, wheel, slider, arrow
+  keys), card preview beside the page square, stored file is the crop. "Ask
+  about this" wired to chat with ?ask=1 intent preservation and one thread per
+  print per buyer. Verified: trigger and default kind by rolled back inserts,
+  bucket and policies live, 8 crop maths tests, product page button enabled.
+  NOT verified: the cropper by hand on a phone, since headless Chrome here
+  cannot pick a file or hold an owner session. First thing to try.
 - 2026-09-05, fix/product-card-overflow: the card spec strip forced one line
   with overflow hidden, so a 70 x 70 x 130 mm print rendered as "70 × 70 × 1",
   a wrong size shown as a finished one. text-overflow does nothing on a flex
