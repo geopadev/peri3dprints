@@ -22,11 +22,15 @@ const LOW_STOCK_AT = 3;
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  const [unread, needsAction, lowStock, drafts] = await Promise.all([
+  const [awaitingReply, needsAction, lowStock, drafts] = await Promise.all([
+    // Not unread_for_owner: that clears the moment he opens a thread, and a
+    // message he has read but not answered is still waiting on him. The last
+    // word being the buyer's is what waiting on a reply means.
     supabase
       .from("conversations")
       .select("id", { count: "exact", head: true })
-      .eq("unread_for_owner", true),
+      .neq("status", "closed")
+      .eq("last_sender_role", "buyer"),
     supabase.from("orders").select("id", { count: "exact", head: true }).in("status", NEEDS_ACTION),
     supabase
       .from("products")
@@ -48,7 +52,7 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <p className={UTILITY_TEXT}>Messages</p>
-          <p className="mt-2 text-3xl">{unread.count ?? 0}</p>
+          <p className="mt-2 text-3xl">{awaitingReply.count ?? 0}</p>
           <p className="mt-1">waiting on a reply</p>
         </Card>
 

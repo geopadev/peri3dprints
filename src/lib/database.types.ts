@@ -44,6 +44,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["convo_kind"]
           last_message_at: string | null
+          last_sender_role: Database["public"]["Enums"]["sender_role"] | null
           order_id: string | null
           product_id: string | null
           status: Database["public"]["Enums"]["convo_status"]
@@ -59,6 +60,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["convo_kind"]
           last_message_at?: string | null
+          last_sender_role?: Database["public"]["Enums"]["sender_role"] | null
           order_id?: string | null
           product_id?: string | null
           status?: Database["public"]["Enums"]["convo_status"]
@@ -74,6 +76,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["convo_kind"]
           last_message_at?: string | null
+          last_sender_role?: Database["public"]["Enums"]["sender_role"] | null
           order_id?: string | null
           product_id?: string | null
           status?: Database["public"]["Enums"]["convo_status"]
