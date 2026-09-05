@@ -3,7 +3,7 @@ import jsQR from "jsqr";
 import { fitModuleScale, qrPixels, qrPixelSize, QUIET_MODULES } from "./qr-pixels";
 import { qrMatrix } from "./qr";
 import { posterUrl } from "./copy";
-import { fitLines, wrapLines } from "./text";
+import { fitLines, fitParagraph, layoutParagraph, wrapLines } from "./text";
 import { mmToPt, mmToPx } from "./sizes";
 
 /**
@@ -130,5 +130,77 @@ describe("paper maths", () => {
   it("converts to points for the pdf", () => {
     expect(mmToPt(210)).toBeCloseTo(595.28, 1);
     expect(mmToPt(297)).toBeCloseTo(841.89, 1);
+  });
+});
+
+describe("layoutParagraph", () => {
+  it("keeps the line breaks the owner typed", () => {
+    const lines = layoutParagraph("Missed something? It is all online.\nScan to view my website!", 1000, 10, measure);
+    expect(lines).toEqual(["Missed something? It is all online.", "Scan to view my website!"]);
+  });
+
+  it("wraps inside a typed line rather than across it", () => {
+    // 5px a character here, so 20 wide fits four: each typed line has to split.
+    const lines = layoutParagraph("aaa bbb\nccc ddd", 20, 10, measure);
+    expect(lines).toEqual(["aaa", "bbb", "ccc", "ddd"]);
+  });
+
+  it("drops a blank line rather than leaving a gap on the paper", () => {
+    expect(layoutParagraph("one\n\n\ntwo", 1000, 10, measure)).toEqual(["one", "two"]);
+  });
+});
+
+describe("fitParagraph", () => {
+  it("shrinks until every typed line fits", () => {
+    const text = "Έχασες κάτι; Είναι όλα online.\nΣκάναρε για να δεις την ιστοσελίδα μου!";
+    const { fontPx, lines } = fitParagraph(text, 300, 40, 10, 4, measure);
+    expect(lines.length).toBeLessThanOrEqual(4);
+    for (const line of lines) expect(measure(line, fontPx)).toBeLessThanOrEqual(300);
+  });
+
+  it("counts the typed breaks against the line budget", () => {
+    // Four short typed lines already fill a four line budget at any size.
+    const { lines } = fitParagraph("a\nb\nc\nd", 1000, 40, 10, 4, measure);
+    expect(lines).toEqual(["a", "b", "c", "d"]);
+  });
+});
+
+describe("the default wording", () => {
+  it("carries all three languages and a break in each", async () => {
+    const { DEFAULT_TEXT } = await import("./copy");
+    for (const [language, value] of Object.entries(DEFAULT_TEXT)) {
+      expect(value.split("\n").length, language).toBe(2);
+    }
+  });
+
+  it("uses the Greek question mark, not the Latin one", async () => {
+    const { DEFAULT_TEXT } = await import("./copy");
+    expect(DEFAULT_TEXT.greek).toContain(";");
+    expect(DEFAULT_TEXT.greek).not.toContain("?");
+  });
+
+  it("is actually in the script it claims", async () => {
+    const { DEFAULT_TEXT } = await import("./copy");
+    expect(DEFAULT_TEXT.greek).toMatch(/[\u0370-\u03ff]/);
+    expect(DEFAULT_TEXT.hebrew).toMatch(/[\u0590-\u05ff]/);
+    expect(DEFAULT_TEXT.english).not.toMatch(/[\u0370-\u03ff\u0590-\u05ff]/);
+  });
+});
+
+describe("fitParagraph keeps typed lines whole", () => {
+  it("shrinks rather than orphaning a word off the end of a typed line", () => {
+    // Wide enough for the sentence at 20px but not at 40px. One pass would
+    // have stopped at 40 and wrapped; two passes shrink and keep it whole.
+    const text = "Missed something? It is all online.\nScan to view my website!";
+    const width = measure("Missed something? It is all online.", 20);
+    const { fontPx, lines } = fitParagraph(text, width, 40, 8, 4, measure);
+    expect(lines).toEqual(["Missed something? It is all online.", "Scan to view my website!"]);
+    expect(fontPx).toBeLessThanOrEqual(20);
+  });
+
+  it("still wraps when even the smallest type cannot keep a line whole", () => {
+    const { lines } = fitParagraph("aaa bbb ccc ddd eee", 20, 40, 10, 4, measure);
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines.join(" ")).toBe("aaa bbb ccc ddd eee");
   });
 });

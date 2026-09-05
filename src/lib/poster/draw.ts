@@ -1,6 +1,6 @@
 import { mmToPx, type PosterSize } from "./sizes";
 import { fitModuleScale, qrPixels, qrPixelSize, type QrMatrix } from "./qr-pixels";
-import { fitLines, type Measure } from "./text";
+import { fitParagraph, type Measure } from "./text";
 
 /** The palette, from CLAUDE.md section 3. Print gets the same colours. */
 const INK = "#12151A";
@@ -12,14 +12,32 @@ export type PosterFonts = {
    *  loaded faces rather than a name the canvas would silently fall back on. */
   display: string;
   mono: string;
+  /*
+    Greek and Hebrew. A second face, and not a preference: Bricolage
+    Grotesque has no Greek and no Hebrew glyphs at all, so drawing either in
+    it produces empty boxes. One face for both translations rather than two,
+    so the block below the English reads as a deliberate second tier.
+  */
+  translations: string;
+};
+
+/** One paragraph of the sign, in one language. */
+export type PosterBlock = {
+  text: string;
+  face: keyof PosterFonts;
+  /** Height of its type, in mm on an A4, before the sheet scale is applied. */
+  sizeMm: number;
+  minSizeMm: number;
+  weight: string;
+  /** Hebrew reads right to left, and the canvas has to be told. */
+  rtl?: boolean;
 };
 
 export type PosterInput = {
-  headline: string;
+  blocks: PosterBlock[];
   shopName: string;
   /** Shown under the code. The same string the QR encodes. */
   url: string;
-  footnote: string;
   qr: QrMatrix;
   size: PosterSize;
   fonts: PosterFonts;
@@ -176,33 +194,51 @@ export function drawPoster(ctx: Ctx, input: PosterInput, dpi: number): void {
   ctx.lineWidth = mm(0.5 * scale);
   ctx.stroke();
 
-  // The headline. Shrinks and wraps rather than running off the paper.
-  const headlineTop = inner + mm(16 * scale);
-  const { fontPx, lines } = fitLines(
-    input.headline,
-    innerWidth,
-    mm(15 * scale),
-    mm(6 * scale),
-    3,
-    measureWith(ctx, fonts.display, "800"),
-  );
-  ctx.font = `800 ${fontPx}px ${fonts.display}`;
-  ctx.fillStyle = INK;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-  const lineHeight = fontPx * 1.05;
-  lines.forEach((line, index) => {
-    ctx.fillText(line, width / 2, headlineTop + index * lineHeight);
-  });
+  // The language blocks, stacked. Each one shrinks and wraps inside the
+  // paper rather than running off it, and each is measured with its own face
+  // because a Greek sentence set in Open Sans is not the width of the English
+  // one set in Bricolage.
+  let cursor = inner + mm(14 * scale);
+  const blockGap = mm(5 * scale);
 
-  const headlineBottom = headlineTop + lines.length * lineHeight;
+  for (const block of input.blocks) {
+    if (!block.text.trim()) continue;
+    const family = fonts[block.face];
+    const { fontPx, lines } = fitParagraph(
+      block.text,
+      innerWidth,
+      mm(block.sizeMm * scale),
+      mm(block.minSizeMm * scale),
+      4,
+      measureWith(ctx, family, block.weight),
+    );
+
+    ctx.save();
+    ctx.font = `${block.weight} ${fontPx}px ${family}`;
+    ctx.fillStyle = INK;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    // Without this the bidi run comes out reordered and the punctuation
+    // lands on the wrong end of the sentence.
+    if (block.rtl) ctx.direction = "rtl";
+
+    const lineHeight = fontPx * 1.12;
+    lines.forEach((line, index) => {
+      ctx.fillText(line, width / 2, cursor + index * lineHeight);
+    });
+    ctx.restore();
+
+    cursor += lines.length * lineHeight + blockGap;
+  }
+
+  const headlineBottom = cursor - blockGap;
 
   // The code, on a white card with a hard shadow, sat in whatever room the
   // headline left. The card and the two lines under it are treated as one
   // block and centred in that room: sizing the card off the width alone left
   // an A4 with the code high and a dead band across the bottom, because the
   // sheet is taller than it is wide and nothing was using the difference.
-  const footerHeight = mm(21 * scale);
+  const footerHeight = mm(16 * scale);
   const blockTop = headlineBottom + mm(8 * scale);
   const blockBottom = height - margin - mm(8 * scale);
   const room = blockBottom - blockTop;
@@ -236,17 +272,8 @@ export function drawPoster(ctx: Ctx, input: PosterInput, dpi: number): void {
 
   drawTicks(ctx, cardX - mm(3 * scale), cardY - mm(3 * scale), cardSize + mm(6 * scale), cardSize + mm(6 * scale), mm(5 * scale));
 
-  // The address, then what to do with it.
+  // The address. Nothing tells them to scan it, because all three blocks
+  // above already did.
   const urlSize = mm(4.6 * scale);
   drawMonoLine(ctx, input.url, width / 2, cardY + cardSize + mm(12 * scale), urlSize, fonts.mono, innerWidth);
-  const noteSize = mm(3.6 * scale);
-  drawMonoLine(
-    ctx,
-    input.footnote.toUpperCase(),
-    width / 2,
-    cardY + cardSize + mm(19 * scale),
-    noteSize,
-    fonts.mono,
-    innerWidth,
-  );
 }
