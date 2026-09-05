@@ -1,20 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Card, Field, Input, Notice, Select, UTILITY_TEXT } from "@/components/ui";
+import { Button, Card, Field, Input, Notice, Select, Textarea, UTILITY_TEXT } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import {
+  DEFAULT_TEXT,
   drawPoster,
-  HEADLINE_MAX,
-  HEADLINE_PRESETS,
-  POSTER_FOOTNOTE,
+  LANGUAGE_LABELS,
   POSTER_SIZES,
+  posterBlocks,
   posterUrl,
   PREVIEW_DPI,
   PRINT_DPI,
+  TEXT_MAX,
   mmToPt,
   mmToPx,
   type PosterFonts,
+  type PosterLanguage,
   type PosterSizeId,
   type QrMatrix,
 } from "@/lib/poster";
@@ -26,6 +28,9 @@ export type PosterStudioProps = {
   /** Built on the server for the default link, so the first paint has a real
    *  code without waiting for anything to download. */
   initialQr: QrMatrix;
+  /** The Greek and Hebrew face, loaded by the page. Put on a probe element so
+   *  the canvas can ask what it actually resolved to. */
+  translationsClassName: string;
 };
 
 function slugForFile(name: string): string {
@@ -40,8 +45,13 @@ function slugForFile(name: string): string {
  * differs: what he lines up on screen is the layout that comes out of the
  * printer.
  */
-export function PosterStudio({ origin, shopName, initialQr }: PosterStudioProps) {
-  const [headline, setHeadline] = useState<string>(HEADLINE_PRESETS[0]);
+export function PosterStudio({
+  origin,
+  shopName,
+  initialQr,
+  translationsClassName,
+}: PosterStudioProps) {
+  const [text, setText] = useState<Record<PosterLanguage, string>>({ ...DEFAULT_TEXT });
   const [sizeId, setSizeId] = useState<PosterSizeId>("a4");
   const [url, setUrl] = useState(origin);
   const [marker, setMarker] = useState(true);
@@ -64,6 +74,7 @@ export function PosterStudio({ origin, shopName, initialQr }: PosterStudioProps)
     if (!probe) return;
     const display = getComputedStyle(probe.children[0]!).fontFamily;
     const mono = getComputedStyle(probe.children[1]!).fontFamily;
+    const translationsFamily = getComputedStyle(probe.children[2]!).fontFamily;
 
     // Wait for the faces themselves, not just the stylesheet: a canvas drawn
     // before they arrive bakes the fallback into the file.
@@ -75,9 +86,10 @@ export function PosterStudio({ origin, shopName, initialQr }: PosterStudioProps)
     void Promise.allSettled([
       document.fonts.load(`800 64px ${display}`),
       document.fonts.load(`400 24px ${mono}`),
+      document.fonts.load(`700 32px ${translationsFamily}`),
       document.fonts.ready,
     ]).then(() => {
-      if (!cancelled) setFonts({ display, mono });
+      if (!cancelled) setFonts({ display, mono, translations: translationsFamily });
     });
 
     return () => {
@@ -109,14 +121,10 @@ export function PosterStudio({ origin, shopName, initialQr }: PosterStudioProps)
       canvas.height = Math.round(mmToPx(size.heightMm, dpi));
       const ctx = canvas.getContext("2d");
       if (!ctx) return false;
-      drawPoster(
-        ctx,
-        { headline, shopName, url: encoded, footnote: POSTER_FOOTNOTE, qr, size, fonts },
-        dpi,
-      );
+      drawPoster(ctx, { blocks: posterBlocks(text), shopName, url: encoded, qr, size, fonts }, dpi);
       return true;
     },
-    [encoded, fonts, headline, qr, shopName, size],
+    [encoded, fonts, qr, shopName, size, text],
   );
 
   useEffect(() => {
@@ -167,37 +175,41 @@ export function PosterStudio({ origin, shopName, initialQr }: PosterStudioProps)
       <div ref={probeRef} aria-hidden="true" className="sr-only">
         <span className="font-display font-extrabold">A</span>
         <span className="font-mono">A</span>
+        <span className={translationsClassName}>A</span>
       </div>
 
       <div className="flex flex-col gap-4 lg:w-80 lg:shrink-0">
         <Card className="flex flex-col gap-4">
-          <Field label="What it says above the code" hint={`${headline.length} of ${HEADLINE_MAX}`}>
-            {(control) => (
-              <Input
-                {...control}
-                value={headline}
-                maxLength={HEADLINE_MAX}
-                onChange={(event) => setHeadline(event.target.value)}
-              />
-            )}
-          </Field>
-
-          <div className="flex flex-wrap gap-2">
-            {HEADLINE_PRESETS.map((preset) => (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => setHeadline(preset)}
-                className={cn(
-                  "rounded-pill border-2 border-ink px-3 py-1 text-left text-sm",
-                  preset === headline ? "bg-ink text-paper" : "bg-surface text-ink",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan focus-visible:outline-solid",
-                )}
-              >
-                {preset}
-              </button>
-            ))}
+          <p className="font-semibold">What it says above the code</p>
+          {(Object.keys(DEFAULT_TEXT) as PosterLanguage[]).map((language) => (
+            <Field
+              key={language}
+              label={LANGUAGE_LABELS[language]}
+              hint={language === "english" ? "Each new line is a new line on the sign." : undefined}
+            >
+              {(control) => (
+                <Textarea
+                  {...control}
+                  rows={2}
+                  value={text[language]}
+                  maxLength={TEXT_MAX}
+                  dir={language === "hebrew" ? "rtl" : "ltr"}
+                  onChange={(event) =>
+                    setText((current) => ({ ...current, [language]: event.target.value }))
+                  }
+                />
+              )}
+            </Field>
+          ))}
+          <div>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setText({ ...DEFAULT_TEXT })}>
+              Put the wording back
+            </Button>
           </div>
+          <p className="text-sm">
+            The Greek and Hebrew are a translation of the English, not checked by someone who
+            speaks them. Have a look before you print a pile of these, and edit them here.
+          </p>
         </Card>
 
         <Card className="flex flex-col gap-4">
@@ -265,7 +277,7 @@ export function PosterStudio({ origin, shopName, initialQr }: PosterStudioProps)
         <div className="rounded-card border-2 border-ink bg-paper p-3 shadow-hard">
           <canvas
             ref={canvasRef}
-            aria-label={`Poster preview: ${headline}`}
+            aria-label={`Poster preview: ${text.english}`}
             role="img"
             className="mx-auto block h-auto w-full max-w-md"
           />
