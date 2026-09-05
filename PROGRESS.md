@@ -33,6 +33,18 @@ Status is one of: not started, in progress, blocked, done.
 
 Dated, newest first. Each was reported by the owner using the live site.
 
+- 2026-09-05, feat/stall-poster: /admin/poster makes a printable sign with a
+  QR for the shop, A4, A5 or A6, editable headline, downloads as a real PDF.
+  Nav item plus a card in Settings. Link carries ?s=stall so Analytics can
+  separate stall scans. Error correction H. One drawPoster function does the
+  preview at 110dpi and the file at 300. Verified in a real browser: the code
+  was decoded back out of the finished 300dpi poster by jsqr, a different
+  library than the one that drew it, on all three sizes, and the PDFs came out
+  at the right point sizes. Found and fixed two things doing it: the code
+  block was not centred on A4, and a rejected document.fonts.load left the
+  download disabled forever, which is now allSettled. NOT verified: an actual
+  phone camera scanning an actual printed sheet, and the download click
+  itself, which headless Chrome cannot do.
 - 2026-09-05, feat/refit-photos-and-edit-link: photos can be refitted or
   replaced after upload instead of deleted and re-added, which used to lose
   their order and description. product_images gained original_path and crop:
