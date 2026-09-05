@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -10,8 +11,17 @@ import { cn } from "@/lib/cn";
  * Honest information, not decoration. Keep whatever sits around it quiet.
  */
 export type SpecStripProps = {
-  /** False on a card, where the strip must stay one line. */
-  wrap?: boolean;
+  /**
+   * The card version. Bounded to two lines, and it never breaks inside a
+   * fact.
+   *
+   * The card used to force one line with overflow hidden, which chopped the
+   * text mid character: a 70 x 70 x 110 mm print read as "70 × 70 × 1" and
+   * looked like a complete measurement. A wrong size on a shop card is worse
+   * than a missing one. Whole facts now move to a second line, and anything
+   * past two lines is dropped rather than half shown.
+   */
+  compact?: boolean;
   material?: string;
   /** x, y, z in millimetres. */
   dimensionsMm?: readonly [number, number, number];
@@ -51,7 +61,7 @@ export function SpecStrip({
   weightGrams,
   printMinutes,
   note,
-  wrap = true,
+  compact = false,
   className,
 }: SpecStripProps) {
   const parts: string[] = [
@@ -67,23 +77,41 @@ export function SpecStrip({
   return (
     <ul
       className={cn(
-        "flex items-center font-mono text-xs tracking-utility text-ink uppercase",
+        "flex flex-wrap items-center font-mono text-xs tracking-utility text-ink uppercase",
         // A prop rather than a class from the caller: cn has no tailwind-merge,
-        // so flex-wrap here and flex-nowrap outside would both ship and source
-        // order would decide. On a card this has to be one line.
-        wrap ? "flex-wrap" : "flex-nowrap overflow-hidden text-ellipsis whitespace-nowrap",
+        // so two conflicting height classes would both ship and source order
+        // would decide which won.
+        //
+        // leading-4 pins the line box at 16px so max-h-8 is exactly two of
+        // them. A third line lands wholly outside the box and is clipped
+        // whole, rather than showing as a sliver of letter tops.
+        compact && "max-h-8 overflow-hidden leading-4",
         className,
       )}
     >
       {parts.map((part, i) => (
-        <li key={`${i}-${part}`} className="flex items-center">
+        <Fragment key={`${i}-${part}`}>
+          {/* Its own item, not tucked inside the fact that follows it. Glued
+              to the fact, the separator ate 16px of whatever line that fact
+              landed on, which was the difference between a 129px dimension
+              fitting a 143px phone card and being ellipsised two pixels
+              short. Alone, it stays behind on the previous line and the fact
+              starts the next one at full width. */}
           {i > 0 && (
-            <span aria-hidden="true" className="px-2">
+            <li aria-hidden="true" className="px-2">
               ·
-            </span>
+            </li>
           )}
-          {part}
-        </li>
+          <li className={cn("flex items-center", compact && "min-w-0")}>
+            {/* nowrap keeps a fact whole, so it moves to the next line rather
+                than breaking across one. truncate is the backstop for the one
+                case that fits nowhere, a long note on a narrow card: it
+                ellipsises, which reads as cut off rather than as the whole
+                thing. text-overflow works here because a flex item is itself
+                a block container, though it would do nothing on the ul. */}
+            <span className={compact ? "truncate whitespace-nowrap" : undefined}>{part}</span>
+          </li>
+        </Fragment>
       ))}
     </ul>
   );

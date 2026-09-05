@@ -86,7 +86,7 @@ export function ProductCard({ product, fadeDelayMs, className }: ProductCardProp
           weightGrams={product.spec.weightGrams ?? undefined}
           printMinutes={product.spec.printMinutes ?? undefined}
           note={product.spec.note ?? undefined}
-          wrap={false}
+          compact
         />
       </div>
     </Link>
