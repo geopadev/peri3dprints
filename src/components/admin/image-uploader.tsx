@@ -54,6 +54,13 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
   const [pending, setPending] = useState<Pending[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // The list as of the latest render, plus whatever this batch has already
+  // added. Picking three photos at once used to end with one: each upload
+  // appended to the `images` prop as it was when the batch started, so the
+  // second overwrote the first and the third overwrote the second.
+  const latest = useRef(images);
+  latest.current = images;
+
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setError(null);
@@ -61,7 +68,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
     const supabase = createClient();
 
     for (const file of Array.from(files)) {
-      const key = `${file.name}-${file.size}-${images.length}-${Math.round(performance.now())}`;
+      const key = `${file.name}-${file.size}-${Math.round(performance.now())}`;
       setPending((current) => [...current, { id: key, name: file.name, progress: "resizing" }]);
 
       try {
@@ -82,10 +89,13 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
 
         if (uploadError) throw new Error(uploadError.message);
 
-        onChange([
-          ...images,
-          { id: null, storage_path: path, alt_text: "", position: images.length },
-        ]);
+        const current = latest.current;
+        const next = [
+          ...current,
+          { id: null, storage_path: path, alt_text: "", position: current.length },
+        ];
+        latest.current = next;
+        onChange(next);
         setPending((current) => current.filter((item) => item.id !== key));
       } catch (cause) {
         setPending((current) => current.filter((item) => item.id !== key));
@@ -120,13 +130,15 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
   return (
     <div className="flex flex-col gap-4">
       <div>
+        {/* No capture attribute on purpose. It sent every phone straight to
+            the camera, with no way to pick from the gallery and, since a
+            camera hands back one shot, no way to add several at once. Without
+            it the phone asks: camera or photos. */}
         <input
           ref={inputRef}
           type="file"
           accept="image/*"
           multiple
-          // capture lets the phone offer the camera directly.
-          capture="environment"
           onChange={(event) => void handleFiles(event.target.files)}
           className="sr-only"
           id="product-photos"
@@ -135,7 +147,8 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
           Add photos
         </Button>
         <p className="mt-2 text-sm">
-          The first photo is the one people see in the shop. Drag order with the arrows.
+          Pick as many as you like. The first photo is the one people see in the shop, use the
+          arrows to change the order.
         </p>
       </div>
 
