@@ -33,6 +33,16 @@ Status is one of: not started, in progress, blocked, done.
 
 Dated, newest first. Each was reported by the owner using the live site.
 
+- 2026-09-05, feat/refit-photos-and-edit-link: photos can be refitted or
+  replaced after upload instead of deleted and re-added, which used to lose
+  their order and description. product_images gained original_path and crop:
+  the uncropped upload is kept at 2400px so a refit reopens where he left it
+  rather than cropping a crop. Save now treats a row as owning two files, so
+  the old square is cleaned up on a refit. Product pages carry an owner only
+  "Edit this print" link. Verified: columns round trip, the link renders for
+  an owner and not for a visitor, the admin page it points at returns 200 with
+  the Fit and Replace controls on it. NOT verified: the refit round trip by
+  hand, which needs a real browser session and a real photo.
 - 2026-09-05, feat/product-videos-and-crop: three asks from the owner. Videos
   on products: product_images.kind, a product-videos bucket (50 MB, video/*),
   a trigger that refuses a video at position 0, every cover query picks the
