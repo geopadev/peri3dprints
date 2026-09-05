@@ -11,9 +11,10 @@ import {
   productVideoUrl,
 } from "@/lib/product-image-url";
 import type { ProductImageInput } from "@/lib/validation/product";
-import { PhotoCropper } from "./photo-cropper";
+import type { Crop } from "./crop-math";
+import { PhotoCropper, type CropResult } from "./photo-cropper";
 
-/** The photo bucket's own ceiling. A 1600px JPEG is nowhere near it. */
+/** The photo bucket's own ceiling. A 2400px JPEG is well under it. */
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 /** The video bucket's ceiling, which is also the most this plan allows per upload. */
 const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
@@ -27,6 +28,18 @@ const VIDEO_EXTENSIONS: Record<string, string> = {
 };
 
 type Pending = { id: string; name: string };
+
+/**
+ * A photo being refitted or replaced. Found again by path when the cropper
+ * comes back, not by index, so reordering the list while it is open cannot
+ * land the result on the wrong row.
+ */
+type Editing = {
+  path: string;
+  source: Blob;
+  initialCrop: Crop | null;
+  mode: "fit" | "replace";
+};
 
 function withPositions(list: ProductImageInput[]): ProductImageInput[] {
   return list.map((item, index) => ({ ...item, position: index }));
@@ -57,21 +70,27 @@ export type ImageUploaderProps = {
  * Photos and videos for a product, in the order the shop shows them.
  *
  * A photo goes through the cropper first, so what is uploaded is already the
- * square the shop needs and nothing downstream has to know about cropping. A
- * video goes up as it is, to its own bucket: nothing resizes it, and the
- * gallery shows it whole.
+ * square the shop needs and nothing downstream has to know about cropping.
+ * The uncropped original goes up beside it, which is what makes "Fit" on an
+ * existing photo possible later: the square is remade from the original, not
+ * from the square. A video goes up as it is, to its own bucket.
  */
 export function ImageUploader({ images, onChange }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const replaceRef = useRef<HTMLInputElement>(null);
+  const replacing = useRef<string | null>(null);
   const [pending, setPending] = useState<Pending[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Photos waiting for the cropper, one at a time, in the order picked.
+  // New photos waiting for the cropper, one at a time, in the order picked.
   const [queue, setQueue] = useState<File[]>([]);
   const [batchTotal, setBatchTotal] = useState(0);
   useEffect(() => {
     if (queue.length === 0) setBatchTotal(0);
   }, [queue.length]);
+
+  // An existing photo in the cropper.
+  const [editing, setEditing] = useState<Editing | null>(null);
 
   // The list as of the latest render, plus whatever this batch has already
   // added. Picking three photos at once used to end with one: each upload
@@ -80,16 +99,69 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
   const latest = useRef(images);
   latest.current = images;
 
-  function append(item: ProductImageInput) {
-    const next = withPositions(photoFirst([...latest.current, item]));
-    latest.current = next;
-    onChange(next);
-  }
-
   function replace(next: ProductImageInput[]) {
     const ordered = withPositions(photoFirst(next));
     latest.current = ordered;
     onChange(ordered);
+  }
+
+  function append(item: ProductImageInput) {
+    replace([...latest.current, item]);
+  }
+
+  function patchRow(path: string, patch: Partial<ProductImageInput>) {
+    replace(latest.current.map((item) => (item.storage_path === path ? { ...item, ...patch } : item)));
+  }
+
+  /** One upload, tracked in the pending list. Resolves to whether it landed. */
+  async function putObject(
+    bucket: string,
+    path: string,
+    body: Blob,
+    contentType: string,
+    name: string,
+  ): Promise<boolean> {
+    const key = `${path}-${Math.round(performance.now())}`;
+    setPending((current) => [...current, { id: key, name }]);
+    try {
+      const { error: uploadError } = await createClient()
+        .storage.from(bucket)
+        .upload(path, body, { contentType, upsert: false });
+      if (uploadError) throw new Error(uploadError.message);
+      return true;
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "That would not upload. Try again in a moment.",
+      );
+      return false;
+    } finally {
+      setPending((current) => current.filter((entry) => entry.id !== key));
+    }
+  }
+
+  /** Square first, then the original. A photo without its original is still a
+   *  photo, just one that cannot be refitted, so that failure is not fatal. */
+  async function putPhoto(
+    result: CropResult,
+    name: string,
+  ): Promise<{ storage_path: string; original_path: string | null } | null> {
+    if (result.square.size > IMAGE_MAX_BYTES) {
+      setError("That photo is still too big after resizing. Try a smaller one.");
+      return null;
+    }
+    const id = crypto.randomUUID();
+    const storage_path = `${id}.jpg`;
+    if (!(await putObject(PRODUCT_IMAGES_BUCKET, storage_path, result.square, "image/jpeg", name))) {
+      return null;
+    }
+    let original_path: string | null = null;
+    if (result.original && result.original.size <= IMAGE_MAX_BYTES) {
+      const path = `${id}-full.jpg`;
+      if (await putObject(PRODUCT_IMAGES_BUCKET, path, result.original, "image/jpeg", `${name} (original)`)) {
+        original_path = path;
+      }
+    }
+    return { storage_path, original_path };
   }
 
   async function handleFiles(files: FileList | null) {
@@ -108,45 +180,19 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
     for (const video of videos) await uploadVideo(video);
   }
 
-  async function upload(
-    bucket: string,
-    path: string,
-    body: Blob,
-    contentType: string,
-    name: string,
-    item: ProductImageInput,
-  ) {
-    const key = `${path}-${Math.round(performance.now())}`;
-    setPending((current) => [...current, { id: key, name }]);
-    try {
-      const { error: uploadError } = await createClient()
-        .storage.from(bucket)
-        .upload(path, body, { contentType, upsert: false });
-      if (uploadError) throw new Error(uploadError.message);
-      append(item);
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "That would not upload. Try again in a moment.",
-      );
-    } finally {
-      setPending((current) => current.filter((entry) => entry.id !== key));
-    }
-  }
-
-  function onCropped(blob: Blob) {
+  async function onNewPhoto(result: CropResult) {
     const file = queue[0];
     // Move to the next photo straight away. The upload carries on underneath,
     // so a batch of five is five quick fits, not five waits.
     setQueue((current) => current.slice(1));
-    if (blob.size > IMAGE_MAX_BYTES) {
-      setError("That photo is still too big after resizing. Try a smaller one.");
-      return;
-    }
-    const path = `${crypto.randomUUID()}.jpg`;
-    void upload(PRODUCT_IMAGES_BUCKET, path, blob, "image/jpeg", file?.name ?? "photo", {
+    const stored = await putPhoto(result, file?.name ?? "photo");
+    if (!stored) return;
+    append({
       id: null,
       kind: "image",
-      storage_path: path,
+      storage_path: stored.storage_path,
+      original_path: stored.original_path,
+      crop: stored.original_path ? result.crop : null,
       alt_text: "",
       position: 0,
     });
@@ -163,12 +209,81 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
       return;
     }
     const path = `${crypto.randomUUID()}.${extension}`;
-    await upload(PRODUCT_VIDEOS_BUCKET, path, file, file.type, file.name, {
+    if (!(await putObject(PRODUCT_VIDEOS_BUCKET, path, file, file.type, file.name))) return;
+    append({
       id: null,
       kind: "video",
       storage_path: path,
+      original_path: null,
+      crop: null,
       alt_text: "",
       position: 0,
+    });
+  }
+
+  /** Reopen a photo in the cropper, from its original where there is one. */
+  async function startFit(item: ProductImageInput) {
+    setError(null);
+    // A photo from before originals were kept is refitted from the file it
+    // has. That file then becomes its original, see onEdited, so the next
+    // refit starts from the same place rather than from a crop of a crop.
+    const sourcePath = item.original_path ?? item.storage_path;
+    const { data, error: downloadError } = await createClient()
+      .storage.from(PRODUCT_IMAGES_BUCKET)
+      .download(sourcePath);
+    if (downloadError || !data) {
+      setError("Could not open that photo to refit it. Try again in a moment.");
+      return;
+    }
+    setEditing({
+      path: item.storage_path,
+      source: data,
+      initialCrop: item.original_path ? item.crop : null,
+      mode: "fit",
+    });
+  }
+
+  function startReplace(item: ProductImageInput) {
+    replacing.current = item.storage_path;
+    replaceRef.current?.click();
+  }
+
+  function onReplaceFile(files: FileList | null) {
+    const file = files?.[0];
+    const path = replacing.current;
+    replacing.current = null;
+    if (replaceRef.current) replaceRef.current.value = "";
+    if (!file || !path) return;
+    if (file.type.startsWith("video/")) {
+      setError("A photo can only be replaced by a photo. Add the video as its own item.");
+      return;
+    }
+    setError(null);
+    setEditing({ path, source: file, initialCrop: null, mode: "replace" });
+  }
+
+  async function onEdited(result: CropResult) {
+    const target = editing;
+    setEditing(null);
+    if (!target) return;
+    const current = latest.current.find((item) => item.storage_path === target.path);
+    if (!current) return;
+
+    const stored = await putPhoto(result, target.mode === "fit" ? "refit" : "replacement");
+    if (!stored) return;
+
+    // The old square becomes an orphan and is removed on save. For a refit the
+    // original is kept, and for a photo that never had one, the file it was
+    // just cropped from is promoted to be it.
+    const original_path =
+      target.mode === "replace"
+        ? stored.original_path
+        : (current.original_path ?? current.storage_path);
+
+    patchRow(target.path, {
+      storage_path: stored.storage_path,
+      original_path,
+      crop: original_path ? result.crop : null,
     });
   }
 
@@ -203,16 +318,34 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {cropping && (
+      {editing ? (
         <PhotoCropper
-          file={cropping}
+          key={`edit-${editing.path}`}
+          source={editing.source}
+          initialCrop={editing.initialCrop}
+          withOriginal={editing.mode === "replace"}
+          title={editing.mode === "fit" ? "Refit the photo" : "Fit the new photo"}
+          confirmLabel={editing.mode === "fit" ? "Use this fit" : "Use this photo"}
+          index={0}
+          total={1}
+          onDone={onEdited}
+          onSkip={() => setEditing(null)}
+          onCancel={() => setEditing(null)}
+        />
+      ) : cropping ? (
+        <PhotoCropper
+          key={`new-${batchTotal - queue.length}`}
+          source={cropping}
+          withOriginal
+          title="Fit the photo"
+          confirmLabel="Use this photo"
           index={batchTotal - queue.length}
           total={batchTotal}
-          onDone={onCropped}
+          onDone={onNewPhoto}
           onSkip={() => setQueue((current) => current.slice(1))}
           onCancel={() => setQueue([])}
         />
-      )}
+      ) : null}
 
       <div>
         {/* No capture attribute on purpose. It sent every phone straight to
@@ -228,13 +361,23 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
           className="sr-only"
           id="product-photos"
         />
+        <input
+          ref={replaceRef}
+          type="file"
+          accept="image/*"
+          onChange={(event) => onReplaceFile(event.target.files)}
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+        />
         <Button type="button" variant="secondary" onClick={() => inputRef.current?.click()}>
           Add photos or videos
         </Button>
         <p className="mt-2 text-sm">
-          Pick as many as you like. Each photo gets fitted to a square first. The first photo is
-          the one people see in the shop, use the arrows to change the order. Videos show on the
-          product page only, and an MP4 plays on every phone.
+          Pick as many as you like. Each photo gets fitted to a square first, and you can refit
+          or replace it later without adding it again. The first photo is the one people see in
+          the shop, use the arrows to change the order. Videos show on the product page only, and
+          an MP4 plays on every phone.
         </p>
       </div>
 
@@ -290,7 +433,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
             )}
 
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className={UTILITY_TEXT}>
                   {index === 0
                     ? "Cover"
@@ -298,7 +441,29 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
                       ? `Video ${index + 1}`
                       : `Photo ${index + 1}`}
                 </span>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap justify-end gap-1">
+                  {item.kind === "image" && (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Refit photo ${index + 1}`}
+                        onClick={() => void startFit(item)}
+                      >
+                        Fit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Replace photo ${index + 1}`}
+                        onClick={() => startReplace(item)}
+                      >
+                        Replace
+                      </Button>
+                    </>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -334,7 +499,9 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
               <Input
                 value={item.alt_text}
                 onChange={(event) => setAlt(index, event.target.value)}
-                placeholder={item.kind === "video" ? "What happens in the video" : "What is in the photo"}
+                placeholder={
+                  item.kind === "video" ? "What happens in the video" : "What is in the photo"
+                }
                 aria-label={`Description for ${item.kind === "video" ? "video" : "photo"} ${index + 1}`}
                 invalid={item.alt_text.trim() === ""}
               />

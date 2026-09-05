@@ -13,18 +13,33 @@ import {
 } from "@/components/ui";
 import { FOCUS_RING } from "@/components/ui/focus-ring";
 import { cn } from "@/lib/cn";
-import { centred, clampCrop, MAX_ZOOM, zoomAt, type Crop } from "./crop-math";
+import { centred, clampCrop, MAX_ZOOM, ORIGINAL_MAX, zoomAt, type Crop } from "./crop-math";
 
-/** Longest edge of what gets uploaded, per CLAUDE.md section 8. */
+/** Longest edge of the square the shop shows, per CLAUDE.md section 8. */
 export const CROP_OUTPUT_MAX = 1600;
 const JPEG_QUALITY = 0.82;
 
+export type CropResult = {
+  /** The square, ready for the shop. */
+  square: Blob;
+  /** Where it sat on the original, in the original's pixels. */
+  crop: Crop;
+  /** The original at ORIGINAL_MAX, when asked for, so the square can be remade later. */
+  original: Blob | null;
+};
+
 export type PhotoCropperProps = {
-  file: File;
-  /** "Photo 2 of 3", so a batch does not feel endless. */
+  source: Blob;
+  /** Where the square was last time, in the source's pixels. Null means centred. */
+  initialCrop?: Crop | null;
+  /** Hand back the resized source too. Off for a refit: that original already exists. */
+  withOriginal: boolean;
+  title: string;
+  confirmLabel: string;
+  /** "2 of 3" for a batch, so it does not feel endless. Ignored when total is 1. */
   index: number;
   total: number;
-  onDone: (blob: Blob) => void;
+  onDone: (result: CropResult) => void;
   /** Leave this photo out and move on to the next one. */
   onSkip: () => void;
   /** Stop the whole batch. */
@@ -55,15 +70,7 @@ function paint(canvas: HTMLCanvasElement | null, bitmap: ImageBitmap, crop: Crop
   context.drawImage(bitmap, crop.x, crop.y, crop.size, crop.size, 0, 0, pixels, pixels);
 }
 
-async function renderCrop(bitmap: ImageBitmap, crop: Crop): Promise<Blob> {
-  const out = Math.max(1, Math.min(CROP_OUTPUT_MAX, Math.round(crop.size)));
-  const canvas = document.createElement("canvas");
-  canvas.width = out;
-  canvas.height = out;
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Could not read that photo.");
-  context.imageSmoothingQuality = "high";
-  context.drawImage(bitmap, crop.x, crop.y, crop.size, crop.size, 0, 0, out, out);
+function toJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("Could not read that photo."))),
@@ -73,13 +80,66 @@ async function renderCrop(bitmap: ImageBitmap, crop: Crop): Promise<Blob> {
   });
 }
 
+function renderCrop(bitmap: ImageBitmap, crop: Crop): Promise<Blob> {
+  const out = Math.max(1, Math.min(CROP_OUTPUT_MAX, Math.round(crop.size)));
+  const canvas = document.createElement("canvas");
+  canvas.width = out;
+  canvas.height = out;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not read that photo.");
+  context.imageSmoothingQuality = "high";
+  context.drawImage(bitmap, crop.x, crop.y, crop.size, crop.size, 0, 0, out, out);
+  return toJpeg(canvas);
+}
+
+function renderOriginal(bitmap: ImageBitmap): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not read that photo.");
+  context.drawImage(bitmap, 0, 0);
+  return toJpeg(canvas);
+}
+
 /**
- * Fit a photo to the square before it is uploaded, the way a profile picture
- * is fitted: drag to move, pinch or slide to zoom, and what is in the square
- * is what the shop shows. Done at upload on purpose. The stored file is the
- * crop, so nothing downstream has to know a crop ever happened.
+ * Decode, upright, and bring down to ORIGINAL_MAX. Everything after this
+ * works in the pixels of the bitmap returned here, which are also the pixels
+ * of the original that gets kept, so a stored crop can be reopened exactly.
  */
-export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: PhotoCropperProps) {
+async function decode(source: Blob): Promise<ImageBitmap> {
+  const raw = await createImageBitmap(source, { imageOrientation: "from-image" });
+  const longest = Math.max(raw.width, raw.height);
+  if (longest <= ORIGINAL_MAX) return raw;
+  const scale = ORIGINAL_MAX / longest;
+  const resized = await createImageBitmap(raw, {
+    resizeWidth: Math.round(raw.width * scale),
+    resizeHeight: Math.round(raw.height * scale),
+    resizeQuality: "high",
+  });
+  raw.close();
+  return resized;
+}
+
+/**
+ * Fit a photo to the square, the way a profile picture is fitted: drag to
+ * move, pinch or slide to zoom, and what is in the square is what the shop
+ * shows. The stored file is the crop, so nothing downstream has to know a
+ * crop ever happened; the original is kept beside it so the fit can be
+ * changed later without uploading the photo again.
+ */
+export function PhotoCropper({
+  source,
+  initialCrop = null,
+  withOriginal,
+  title,
+  confirmLabel,
+  index,
+  total,
+  onDone,
+  onSkip,
+  onCancel,
+}: PhotoCropperProps) {
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null);
   const [crop, setCrop] = useState<Crop | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,8 +149,6 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ distance: number; crop: Crop } | null>(null);
 
-  // Decode once per file. from-image applies the EXIF rotation, so a phone
-  // photo taken sideways is upright before it is ever drawn or cropped.
   useEffect(() => {
     let cancelled = false;
     let decoded: ImageBitmap | null = null;
@@ -98,7 +156,7 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
     setCrop(null);
     setError(null);
     setBusy(false);
-    createImageBitmap(file, { imageOrientation: "from-image" })
+    decode(source)
       .then((image) => {
         if (cancelled) {
           image.close();
@@ -106,7 +164,11 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
         }
         decoded = image;
         setBitmap(image);
-        setCrop(centred(image.width, image.height));
+        setCrop(
+          initialCrop
+            ? clampCrop(initialCrop, image.width, image.height)
+            : centred(image.width, image.height),
+        );
       })
       .catch(() => {
         if (!cancelled) {
@@ -117,7 +179,7 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
       cancelled = true;
       decoded?.close();
     };
-  }, [file]);
+  }, [source, initialCrop]);
 
   // Draw on every change, and again when the dialog changes size, which on a
   // phone means rotating it.
@@ -190,7 +252,11 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
     setCrop((current) => {
       if (!current) return current;
       const scale = current.size / rect.width;
-      return clampCrop({ ...current, x: current.x - dx * scale, y: current.y - dy * scale }, width, height);
+      return clampCrop(
+        { ...current, x: current.x - dx * scale, y: current.y - dy * scale },
+        width,
+        height,
+      );
     });
   }
 
@@ -229,16 +295,20 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
     );
   }
 
-  async function useThisPhoto() {
+  async function confirm() {
     if (!bitmap || !crop) return;
     setBusy(true);
     try {
-      onDone(await renderCrop(bitmap, crop));
+      const square = await renderCrop(bitmap, crop);
+      const original = withOriginal ? await renderOriginal(bitmap) : null;
+      onDone({ square, crop, original });
     } catch {
-      setError("Could not save that crop. Try again.");
+      setError("Could not save that fit. Try again.");
       setBusy(false);
     }
   }
+
+  const heading = total > 1 ? `${title}, ${index + 1} of ${total}` : title;
 
   return (
     <Dialog
@@ -251,7 +321,7 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
           the edge of the square is the commonest way to leave the panel, and
           losing a whole batch to that would be maddening. Escape still works. */}
       <DialogContent className="max-w-md" onInteractOutside={(event) => event.preventDefault()}>
-        <DialogTitle>{total > 1 ? `Fit photo ${index + 1} of ${total}` : "Fit the photo"}</DialogTitle>
+        <DialogTitle>{heading}</DialogTitle>
         <DialogDescription>
           Drag to move it, pinch or use the slider to zoom. The square is exactly what the shop
           shows, on the card and on the product page.
@@ -328,15 +398,15 @@ export function PhotoCropper({ file, index, total, onDone, onSkip, onCancel }: P
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
-            Stop
+            {total > 1 ? "Stop" : "Cancel"}
           </Button>
           {total > 1 && (
             <Button type="button" variant="secondary" onClick={onSkip} disabled={busy}>
               Skip this one
             </Button>
           )}
-          <Button type="button" onClick={useThisPhoto} disabled={!bitmap || !crop || busy}>
-            {busy ? "Saving" : "Use this photo"}
+          <Button type="button" onClick={confirm} disabled={!bitmap || !crop || busy}>
+            {busy ? "Saving" : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>
