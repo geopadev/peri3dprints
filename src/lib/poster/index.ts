@@ -3,7 +3,7 @@ export {
   DEFAULT_TEXT,
   LANGUAGE_LABELS,
   posterUrl,
-  STALL_MARKER,
+  STALL_PATH,
   TEXT_MAX,
   type PosterLanguage,
 } from "./copy";

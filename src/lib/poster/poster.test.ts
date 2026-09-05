@@ -14,11 +14,11 @@ import { mmToPt, mmToPx } from "./sizes";
  */
 describe("the printed code scans", () => {
   const cases = [
-    "https://peri3dprints.vercel.app/?s=stall",
-    "https://peri3dprints.com/?s=stall",
+    "https://peri3dprints.vercel.app/stall",
+    "https://peri3dprints.com/stall",
     "https://peri3dprints.com",
     // A long one, which forces a bigger symbol and smaller modules.
-    "https://a-rather-longer-domain-than-he-will-ever-use.example.com/?s=stall",
+    "https://a-rather-longer-domain-than-he-will-ever-use.example.com/stall",
   ];
 
   for (const url of cases) {
@@ -32,7 +32,7 @@ describe("the printed code scans", () => {
   }
 
   it("still scans at the smallest module the fitter will pick", () => {
-    const url = "https://peri3dprints.vercel.app/?s=stall";
+    const url = "https://peri3dprints.vercel.app/stall";
     const matrix = qrMatrix(url);
     const pixels = qrPixels(matrix, 1);
     expect(jsQR(pixels.data, pixels.width, pixels.height)?.data).toBe(url);
@@ -70,13 +70,13 @@ describe("fitModuleScale", () => {
 });
 
 describe("posterUrl", () => {
-  it("adds the stall marker", () => {
-    expect(posterUrl("https://peri3dprints.com", true)).toBe("https://peri3dprints.com/?s=stall");
+  it("routes through the counted path", () => {
+    expect(posterUrl("https://peri3dprints.com", true)).toBe("https://peri3dprints.com/stall");
   });
   it("does not double the slash on an origin that has one", () => {
-    expect(posterUrl("https://peri3dprints.com/", true)).toBe("https://peri3dprints.com/?s=stall");
+    expect(posterUrl("https://peri3dprints.com/", true)).toBe("https://peri3dprints.com/stall");
   });
-  it("leaves the link alone when the marker is off", () => {
+  it("goes straight to the homepage when scans are not being counted", () => {
     expect(posterUrl("https://peri3dprints.com/", false)).toBe("https://peri3dprints.com");
   });
 });

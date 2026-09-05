@@ -45,7 +45,7 @@ export default async function AdminPosterPage() {
       <PosterStudio
         origin={origin}
         shopName={SHOP_NAME}
-        initialQr={qrMatrix(posterUrl(origin, true))}
+        initialQr={qrMatrix(posterUrl(origin, true))} // counted by default: matches the checkbox
         translationsClassName={translations.className}
       />
     </main>

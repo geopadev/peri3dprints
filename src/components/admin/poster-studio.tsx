@@ -54,7 +54,7 @@ export function PosterStudio({
   const [text, setText] = useState<Record<PosterLanguage, string>>({ ...DEFAULT_TEXT });
   const [sizeId, setSizeId] = useState<PosterSizeId>("a4");
   const [url, setUrl] = useState(origin);
-  const [marker, setMarker] = useState(true);
+  const [counted, setCounted] = useState(true);
   const [qr, setQr] = useState<QrMatrix>(initialQr);
   const [fonts, setFonts] = useState<PosterFonts | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,7 +63,7 @@ export function PosterStudio({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const probeRef = useRef<HTMLDivElement>(null);
   const size = POSTER_SIZES[sizeId];
-  const encoded = posterUrl(url, marker);
+  const encoded = posterUrl(url, counted);
 
   // The real loaded families, read off the page rather than named here.
   // next/font generates its own family names at build time, so writing
@@ -100,7 +100,7 @@ export function PosterStudio({
   // The code only has to be rebuilt when the link changes, and the library
   // that builds it is only fetched if he actually edits it.
   useEffect(() => {
-    if (encoded === posterUrl(origin, true)) return;
+    if (encoded === posterUrl(origin, counted)) return;
     let cancelled = false;
     void import("@/lib/poster/qr")
       .then(({ qrMatrix }) => {
@@ -112,7 +112,7 @@ export function PosterStudio({
     return () => {
       cancelled = true;
     };
-  }, [encoded, origin]);
+  }, [encoded, origin, counted]);
 
   const render = useCallback(
     (canvas: HTMLCanvasElement, dpi: number) => {
@@ -246,15 +246,17 @@ export function PosterStudio({
           <label className="flex min-h-11 items-center gap-3">
             <input
               type="checkbox"
-              checked={marker}
-              onChange={(event) => setMarker(event.target.checked)}
+              checked={counted}
+              onChange={(event) => setCounted(event.target.checked)}
               className="h-5 w-5 accent-ink"
             />
-            <span>Mark these visits as coming from the stall</span>
+            <span>Count how many people scan this</span>
           </label>
           <p className="text-sm">
-            Adds <span className="font-mono text-xs">?s=stall</span> to the link, so you can tell
-            how many people scanned it. No cookies, nothing for anyone to agree to.
+            The code opens a page that sends people straight on to the shop. In Vercel, under
+            Analytics then Pages, the number next to{" "}
+            <span className="font-mono text-xs">/stall</span> is exactly how many times this
+            poster was scanned. No cookies, nothing for anyone to agree to.
           </p>
         </Card>
 

@@ -25,14 +25,16 @@ export const LANGUAGE_LABELS: Record<PosterLanguage, string> = {
 export const TEXT_MAX = 160;
 
 /**
- * The marker that tells Vercel Analytics a visit came off the stall rather
- * than out of a search. A query param rather than a cookie, so it stays
- * cookieless and needs no consent banner.
+ * Where the code sends people, when the owner wants scans counted. A
+ * separate route rather than a query string, because Vercel's free plan
+ * groups page views by path with the query string stripped, so a marker
+ * there would have merged into every other homepage visit and counted
+ * nothing. See src/app/stall/page.tsx. No cookie either way, so it needs no
+ * consent banner.
  */
-export const STALL_MARKER = "s=stall";
+export const STALL_PATH = "/stall";
 
-export function posterUrl(origin: string, withMarker: boolean): string {
-  const trimmed = origin.trim().replace(/\/+$/, "");
-  if (!withMarker) return trimmed || origin.trim();
-  return `${trimmed}/?${STALL_MARKER}`;
+export function posterUrl(origin: string, counted: boolean): string {
+  const trimmed = origin.trim().replace(/\/+$/, "") || origin.trim();
+  return counted ? `${trimmed}${STALL_PATH}` : trimmed;
 }
