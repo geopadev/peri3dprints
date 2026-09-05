@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centred, clampCrop, MAX_ZOOM, zoomAt } from "./crop-math";
+import { centred, clampCrop, MAX_ZOOM, parseCrop, zoomAt } from "./crop-math";
 
 describe("centred", () => {
   it("takes the biggest square from the middle of a landscape photo", () => {
@@ -64,5 +64,19 @@ describe("zoomAt", () => {
     const after = zoomAt(start, 2, 0.5, 0.5, w, h);
     expect(after.x + after.size / 2).toBeCloseTo(start.x + start.size / 2, 6);
     expect(after.y + after.size / 2).toBeCloseTo(start.y + start.size / 2, 6);
+  });
+});
+
+describe("parseCrop", () => {
+  it("reads a crop back from loose json", () => {
+    expect(parseCrop({ x: 10, y: 20, size: 300 })).toEqual({ x: 10, y: 20, size: 300 });
+  });
+  it("refuses anything that is not a crop", () => {
+    expect(parseCrop(null)).toBeNull();
+    expect(parseCrop("x")).toBeNull();
+    expect(parseCrop({ x: 1, y: 2 })).toBeNull();
+    expect(parseCrop({ x: "1", y: 2, size: 3 })).toBeNull();
+    expect(parseCrop({ x: 1, y: 2, size: 0 })).toBeNull();
+    expect(parseCrop({ x: 1, y: 2, size: Number.NaN })).toBeNull();
   });
 });

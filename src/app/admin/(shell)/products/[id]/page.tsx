@@ -1,3 +1,4 @@
+import { parseCrop } from "@/components/admin/crop-math";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -33,7 +34,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     supabase
       .from("products")
       .select(
-        "*, product_images(id, storage_path, alt_text, position, kind), product_variants(id, option_label, name, swatch_hex, price_delta_cents, stock_qty, sku, position)",
+        "*, product_images(id, storage_path, alt_text, position, kind, original_path, crop), product_variants(id, option_label, name, swatch_hex, price_delta_cents, stock_qty, sku, position)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -70,6 +71,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         id: image.id,
         storage_path: image.storage_path,
         kind: image.kind === "video" ? ("video" as const) : ("image" as const),
+        original_path: image.original_path ?? null,
+        crop: parseCrop(image.crop),
         alt_text: image.alt_text,
         position: index,
       })),

@@ -66,12 +66,24 @@ export const productStatusSchema = z.enum(["draft", "active", "archived"]);
 export const productMediaKindSchema = z.enum(["image", "video"]);
 export type ProductMediaKind = z.infer<typeof productMediaKindSchema>;
 
+/** Where the square sat on the original, in the original's pixels. */
+export const cropSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  size: z.number().positive(),
+});
+
 export const productImageSchema = z.object({
   id: optionalText,
   storage_path: z.string().trim().min(1),
   /** Photos and videos share this list and its ordering. Defaults to image so
    *  a row written before videos existed still parses. */
   kind: productMediaKindSchema.default("image"),
+  /** The uncropped upload a photo was fitted from, kept so it can be refitted
+   *  later, and where the square sat on it. Null for videos, and for photos
+   *  from before originals were kept. */
+  original_path: optionalText,
+  crop: z.union([cropSchema, z.null()]).default(null),
   // Required, because CLAUDE.md section 8 says every image carries real alt text.
   alt_text: z
     .string()

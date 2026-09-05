@@ -41,3 +41,19 @@ export function zoomAt(
   const sourceY = crop.y + anchorY * crop.size;
   return clampCrop({ size, x: sourceX - anchorX * size, y: sourceY - anchorY * size }, width, height);
 }
+
+/**
+ * Longest edge of the kept original. It is never served to a buyer, only
+ * reopened by the cropper, so it can be larger than the 1600px square the
+ * shop shows and a hard zoom still has pixels to work with.
+ */
+export const ORIGINAL_MAX = 2400;
+
+/** A crop read back from the database, which stores it as loose JSON. */
+export function parseCrop(value: unknown): Crop | null {
+  if (!value || typeof value !== "object") return null;
+  const { x, y, size } = value as Record<string, unknown>;
+  if (typeof x !== "number" || typeof y !== "number" || typeof size !== "number") return null;
+  if (![x, y, size].every(Number.isFinite) || size <= 0) return null;
+  return { x, y, size };
+}

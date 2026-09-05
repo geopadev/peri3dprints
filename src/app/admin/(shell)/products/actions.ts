@@ -24,6 +24,14 @@ async function slugTaken(slug: string, ignoreId: string | null): Promise<boolean
   return (data?.length ?? 0) > 0;
 }
 
+/** Every file a row owns: the square, and the original it was cut from if kept. */
+function filesOf(rows: { storage_path: string; original_path: string | null; kind: string }[]) {
+  return rows.flatMap((row) => [
+    { storage_path: row.storage_path, kind: row.kind },
+    ...(row.original_path ? [{ storage_path: row.original_path, kind: row.kind }] : []),
+  ]);
+}
+
 /** Photos and videos live in different buckets, so a removal splits by kind. */
 async function removeMedia(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -105,11 +113,14 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
   // more ways to end up with a gap in the positions.
   const { data: existingImages } = await supabase
     .from("product_images")
-    .select("id, storage_path, kind")
+    .select("id, storage_path, original_path, kind")
     .eq("product_id", productId);
 
-  const keptPaths = new Set(product.images.map((image) => image.storage_path));
-  const orphans = (existingImages ?? []).filter((image) => !keptPaths.has(image.storage_path));
+  // A refit leaves the old square behind and keeps the original; a removal
+  // leaves both. Everything the submitted list still names is kept, the rest
+  // goes.
+  const keptPaths = new Set(filesOf(product.images).map((file) => file.storage_path));
+  const orphans = filesOf(existingImages ?? []).filter((file) => !keptPaths.has(file.storage_path));
 
   await supabase.from("product_images").delete().eq("product_id", productId);
   if (product.images.length > 0) {
@@ -118,6 +129,8 @@ export async function saveProduct(input: ProductInput): Promise<SaveResult> {
         product_id: productId,
         storage_path: image.storage_path,
         kind: image.kind,
+        original_path: image.original_path,
+        crop: image.crop,
         alt_text: image.alt_text,
         position: index,
       })),
@@ -172,13 +185,13 @@ export async function deleteProduct(formData: FormData): Promise<void> {
   // Collect the storage paths before the cascade removes the rows that name them.
   const { data: media } = await supabase
     .from("product_images")
-    .select("storage_path, kind")
+    .select("storage_path, original_path, kind")
     .eq("product_id", id);
 
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return;
 
-  if (media && media.length > 0) await removeMedia(supabase, media);
+  if (media && media.length > 0) await removeMedia(supabase, filesOf(media));
 
   revalidatePath("/admin/products");
   redirect("/admin/products");

@@ -377,24 +377,30 @@ export type Database = {
       product_images: {
         Row: {
           alt_text: string
+          crop: Json | null
           id: string
           kind: string
+          original_path: string | null
           position: number | null
           product_id: string
           storage_path: string
         }
         Insert: {
           alt_text: string
+          crop?: Json | null
           id?: string
           kind?: string
+          original_path?: string | null
           position?: number | null
           product_id: string
           storage_path: string
         }
         Update: {
           alt_text?: string
+          crop?: Json | null
           id?: string
           kind?: string
+          original_path?: string | null
           position?: number | null
           product_id?: string
           storage_path?: string
