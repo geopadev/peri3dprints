@@ -159,7 +159,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
           >
             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-card border-2 border-ink bg-paper">
               <Image
-                src={productImageUrl(image.storage_path, 192)}
+                src={productImageUrl(image.storage_path)}
                 alt={image.alt_text || "Photo with no description yet"}
                 fill
                 sizes="96px"

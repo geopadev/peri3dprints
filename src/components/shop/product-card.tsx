@@ -52,7 +52,7 @@ export function ProductCard({ product, fadeDelayMs, className }: ProductCardProp
       <div className="relative aspect-square w-full bg-paper">
         {product.cover ? (
           <Image
-            src={productImageUrl(product.cover.storagePath, 480)}
+            src={productImageUrl(product.cover.storagePath)}
             alt={product.cover.altText}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"

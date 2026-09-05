@@ -108,7 +108,7 @@ export default async function AdminProductsPage({
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-card border-2 border-ink bg-paper">
                     {cover ? (
                       <Image
-                        src={productImageUrl(cover.storage_path, 128)}
+                        src={productImageUrl(cover.storage_path)}
                         alt={cover.alt_text}
                         fill
                         sizes="64px"

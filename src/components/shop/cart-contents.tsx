@@ -141,7 +141,7 @@ export function CartContents({
             >
               {line.cover ? (
                 <Image
-                  src={productImageUrl(line.cover.storagePath, 160)}
+                  src={productImageUrl(line.cover.storagePath)}
                   alt={line.cover.altText}
                   fill
                   sizes="80px"

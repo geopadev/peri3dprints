@@ -46,7 +46,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
     <div className="flex flex-col gap-3">
       <div className="relative hidden aspect-square w-full overflow-hidden rounded-card border-2 border-ink bg-paper lg:block">
         <Image
-          src={productImageUrl(images[active]!.storagePath, 960)}
+          src={productImageUrl(images[active]!.storagePath)}
           alt={images[active]!.altText}
           fill
           sizes="50vw"
@@ -71,7 +71,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
               )}
             >
               <Image
-                src={productImageUrl(image.storagePath, 128)}
+                src={productImageUrl(image.storagePath)}
                 alt=""
                 fill
                 sizes="64px"
@@ -93,7 +93,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
             className="relative aspect-square w-full flex-none snap-start bg-paper"
           >
             <Image
-              src={productImageUrl(image.storagePath, 960)}
+              src={productImageUrl(image.storagePath)}
               alt={image.altText}
               fill
               sizes="100vw"

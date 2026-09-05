@@ -30,7 +30,7 @@ export async function generateMetadata({
       type: "website",
       title: product.title,
       description,
-      images: cover ? [{ url: productImageUrl(cover.storagePath, 1200) }] : undefined,
+      images: cover ? [{ url: productImageUrl(cover.storagePath) }] : undefined,
     },
   };
 }
@@ -61,7 +61,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     name: product.title,
     description: product.shortDescription ?? product.description ?? undefined,
     sku: product.slug,
-    image: product.images.map((image) => productImageUrl(image.storagePath, 1600)),
+    image: product.images.map((image) => productImageUrl(image.storagePath)),
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",
