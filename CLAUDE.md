@@ -221,7 +221,9 @@ Not optional, do not announce it in the UI.
 - Contrast: `--flame` on white fails at small sizes. Use `--flame` as a background with `--ink`
   text on top, or `--ink` text on a `--flame` border.
 - Images through `next/image` with explicit `sizes`, which is what does the resizing. Product
-  images are capped at 1600px on the longest edge in the browser before upload. Do not use
+  photos are fitted to a square in the browser before upload and the square is capped at 1600px.
+  The uncropped original is kept beside it at 2400px max so the fit can be changed later; it is
+  never served to a buyer, only reopened by the cropper. Do not use
   Supabase image transforms (`/storage/v1/render/image/...`): they are a paid Supabase feature
   and this project is on the free plan, so every one of those URLs returns 403 and the photo
   does not appear. Link to the plain public object URL and let `next/image` do the rest.
