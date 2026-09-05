@@ -33,6 +33,13 @@ Status is one of: not started, in progress, blocked, done.
 
 Dated, newest first. Each was reported by the owner using the live site.
 
+- 2026-09-05, fix/product-card-overflow: the card spec strip forced one line
+  with overflow hidden, so a 70 x 70 x 130 mm print rendered as "70 × 70 × 1",
+  a wrong size shown as a finished one. text-overflow does nothing on a flex
+  container so no ellipsis appeared either. Facts now wrap whole within two
+  lines, separators are their own items so a wrapped fact gets the full width.
+  Verified in a real browser at phone and desktop widths, including reduced
+  motion.
 - 2026-09-05, fix/admin-photos-menu-stats: dashboard "Messages" counted
   unread_for_owner, which clears on opening a thread, so two open questions
   showed as 0. conversations.last_sender_role added and kept by the message
