@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Button, Card, Input, Notice, Textarea } from "@/components/ui";
 import { createClient } from "@/lib/supabase/server";
 import { saveSettings } from "./actions";
@@ -39,6 +40,18 @@ export default async function AdminSettingsPage({
           <p>Saved.</p>
         </Notice>
       )}
+
+      <Card className="flex flex-col gap-3">
+        <h2 className="text-xl">Stall poster</h2>
+        <p>
+          A printable sign with a code people can scan to open the shop on their phone.
+        </p>
+        <div>
+          <Link href="/admin/poster">
+            <Button variant="secondary">Make a stall poster</Button>
+          </Link>
+        </div>
+      </Card>
 
       <form action={saveSettings} className="flex flex-col gap-6">
         <Card className="flex flex-col gap-3">
