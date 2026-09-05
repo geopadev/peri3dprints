@@ -80,6 +80,11 @@ a faint tint, so a discount badge and a declined card never look the same.
 Load with `next/font/google`. Type scale: 12 / 14 / 16 / 20 / 26 / 34 / 48 / 64 px.
 Body copy is 16px minimum, never smaller on mobile.
 
+None of those three carry Greek or Hebrew, verified against the Google Fonts metadata, so text in
+either script set in them comes out as empty boxes. The stall poster says its line in English,
+Greek and Hebrew, and loads Open Sans for the two translated lines only, on that admin route
+alone. Keep it there: this is a glyph coverage problem, not a licence for a fourth face.
+
 ### Shape and texture
 
 - Borders are `2px solid var(--ink)`. Not hairlines, not grey.
