@@ -33,6 +33,16 @@ Status is one of: not started, in progress, blocked, done.
 
 Dated, newest first. Each was reported by the owner using the live site.
 
+- 2026-09-05, feat/poster-three-languages: the poster says its line in
+  English, Greek and Hebrew, one editable field each, Hebrew drawn right to
+  left. None of the shop's three faces carry Greek or Hebrew (checked against
+  the Google Fonts metadata, not assumed), so Open Sans is loaded on the
+  poster route only for the two translated lines; noted in CLAUDE.md.
+  Verified in a browser: all three scripts render as real glyphs, not empty
+  boxes, and the code still scans off the finished poster at A4 and A6.
+  Fitting now keeps every typed line whole. THE TRANSLATIONS ARE NOT CHECKED
+  BY A SPEAKER of either language: they need a human read before a print run,
+  which is why all three fields are editable.
 - 2026-09-05, feat/stall-poster: /admin/poster makes a printable sign with a
   QR for the shop, A4, A5 or A6, editable headline, downloads as a real PDF.
   Nav item plus a card in Settings. Link carries ?s=stall so Analytics can
