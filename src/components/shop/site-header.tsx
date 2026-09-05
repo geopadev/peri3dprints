@@ -62,7 +62,7 @@ export async function SiteHeader() {
             sits flush against the edge on every other size. */}
         <div className="flex min-w-0 items-center gap-2">
           <div className="sm:hidden">
-            <SiteMenu categories={categories} isOwner={isOwner} />
+            <SiteMenu categories={categories} />
           </div>
 
           <Link
@@ -110,6 +110,7 @@ export async function SiteHeader() {
               displayName={displayName}
               signOutAction={signOut}
               unreadMessages={notifications.messageCount}
+              isOwner={isOwner}
             />
           ) : (
             <>

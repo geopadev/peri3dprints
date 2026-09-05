@@ -13,6 +13,10 @@ export type AccountMenuProps = {
   /** Unread conversations, shown against Messages so the count is where the
    *  thing it counts is. */
   unreadMessages?: number;
+  /** Owners get a way into the admin from here. Decided on the server, so it
+   *  is a convenience for someone who already has access rather than a hint
+   *  to anyone who does not: every admin route still checks for itself. */
+  isOwner?: boolean;
 };
 
 const ITEM = `flex min-h-11 items-center border-t-2 border-ink px-4 ${UTILITY_TEXT}`;
@@ -28,8 +32,15 @@ const ITEM = `flex min-h-11 items-center border-t-2 border-ink px-4 ${UTILITY_TE
  * Shown at every width, including on a phone. The drawer on the left is for
  * the shop: home, categories, custom requests. Anything to do with the person
  * signed in belongs on the right, under this icon, where they will look for it.
+ * That includes the admin: it is his, not the shop's, so it sits first in this
+ * list for the one person who sees it and nowhere in the drawer.
  */
-export function AccountMenu({ displayName, signOutAction, unreadMessages = 0 }: AccountMenuProps) {
+export function AccountMenu({
+  displayName,
+  signOutAction,
+  unreadMessages = 0,
+  isOwner = false,
+}: AccountMenuProps) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -53,6 +64,11 @@ export function AccountMenu({ displayName, signOutAction, unreadMessages = 0 }: 
         )}
 
         <nav className="flex flex-col">
+          {isOwner && (
+            <Link href="/admin" onClick={close} className={cn(ITEM, FOCUS_RING)}>
+              Admin
+            </Link>
+          )}
           <Link href="/account" onClick={close} className={cn(ITEM, FOCUS_RING)}>
             Account
           </Link>
