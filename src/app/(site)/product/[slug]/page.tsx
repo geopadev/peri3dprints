@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SpecStrip } from "@/components/ui";
+import { Button, SpecStrip } from "@/components/ui";
 import { ProductCard } from "@/components/shop/product-card";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductPurchasePanel } from "@/components/shop/product-purchase-panel";
 import { productImageUrl } from "@/lib/product-image-url";
 import { getProductBySlug, getRelatedProducts, getSettings } from "@/lib/products";
 import { siteOrigin } from "@/lib/site-origin";
+import { createClient } from "@/lib/supabase/server";
 import { whatsappLink } from "@/lib/whatsapp-link";
 
 const RELATED_COUNT = 4;
@@ -40,12 +42,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const [related, settings, origin] = await Promise.all([
+  const [related, settings, origin, isOwner] = await Promise.all([
     product.categoryId
       ? getRelatedProducts(product.categoryId, product.id, RELATED_COUNT)
       : Promise.resolve([]),
     getSettings(),
     siteOrigin(),
+    createClient()
+      .then((supabase) => supabase.rpc("is_owner"))
+      .then((result) => result.data === true),
   ]);
 
   const productUrl = `${origin}/product/${product.slug}`;
@@ -83,6 +88,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <ProductGallery images={product.images} />
 
         <div className="flex flex-col gap-5">
+          {/* Owner only, decided on the server. A convenience for someone who
+              already has access, not a hint to anyone who does not: the admin
+              route checks for itself. */}
+          {isOwner && (
+            <div className="flex justify-end">
+              <Link href={`/admin/products/${product.id}`}>
+                <Button variant="secondary" size="sm">
+                  Edit this print
+                </Button>
+              </Link>
+            </div>
+          )}
           <div>
             <h1 className="text-2xl">{product.title}</h1>
             {product.shortDescription && <p className="mt-1">{product.shortDescription}</p>}
